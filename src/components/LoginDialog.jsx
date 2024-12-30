@@ -35,21 +35,35 @@ const LoginDialog = ({ open, handleClose, setAuth }) => {
         }
 
         try {
+            // Отправка запроса на вход без withCredentials
             const response = await axios.post('http://localhost:8080/api/auth/login', {
                 username,
                 password
-            }, { withCredentials: true });
+            });
 
             console.log('Ответ от бэкенда:', response.data);
 
-            // После успешного логина, получаем профиль пользователя
-            const profileResponse = await axios.get('http://localhost:8080/api/users/profile', { withCredentials: true });
-            setAuth({
-                isAuthenticated: true,
-                user: profileResponse.data,
-            });
+            const { token, type, ...userData } = response.data;
 
-            handleClose();
+            if (token && type) {
+                // Сохранение токена в localStorage
+                const authToken = `${type} ${token}`;
+                localStorage.setItem('authToken', authToken);
+
+                // Установка заголовка Authorization для всех запросов axios
+                axios.defaults.headers.common['Authorization'] = authToken;
+
+                // Установка состояния аутентификации
+                setAuth({
+                    isAuthenticated: true,
+                    user: userData,
+                });
+
+                // Закрытие диалога
+                handleClose();
+            } else {
+                setAuthError('Некорректный ответ от сервера');
+            }
         } catch (err) {
             console.error('Ошибка при авторизации:', err);
             if (err.response && err.response.status === 401) {

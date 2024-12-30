@@ -15,11 +15,32 @@ import {
     CircularProgress,
     Alert,
     Tooltip,
-    IconButton
+    IconButton,
+    Box,
 } from '@mui/material';
 import { format, parse, differenceInDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import DeleteIcon from '@mui/icons-material/Delete'; // Иконка для удаления
+import { styled } from '@mui/material/styles';
+
+// Кастомные стили для TableCell и TableRow
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    border: '1px solid #ddd',
+    padding: '12px 16px',
+    boxSizing: 'border-box',
+    [theme.breakpoints.down('sm')]: {
+        padding: '8px 12px',
+    },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+    '&:nth-of-type(odd)': {
+        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    },
+    '&:hover': {
+        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    },
+}));
 
 const MedicinesTable = ({ isAdmin }) => {
     const [medicines, setMedicines] = useState([]);
@@ -49,7 +70,7 @@ const MedicinesTable = ({ isAdmin }) => {
                         page: currentPage - 1, // Бэкенд использует нумерацию страниц с 0
                         size: rowsPerPage,
                         sort: `${orderBy},${order}`,
-                    }
+                    },
                 });
 
                 // Логирование ответа для отладки
@@ -84,29 +105,6 @@ const MedicinesTable = ({ isAdmin }) => {
         setCurrentPage(newPage);
     };
 
-    // Функция для сортировки данных
-    const sortData = (data, order, orderBy) => {
-        return data.sort((a, b) => {
-            let aValue = a[orderBy];
-            let bValue = b[orderBy];
-
-            if (orderBy === 'expirationDate') {
-                aValue = parse(aValue, 'dd-MM-yyyy', new Date());
-                bValue = parse(bValue, 'dd-MM-yyyy', new Date());
-            }
-
-            if (aValue < bValue) {
-                return order === 'asc' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return order === 'asc' ? 1 : -1;
-            }
-            return 0;
-        });
-    };
-
-    const sortedMedicines = sortData([...medicines], order, orderBy);
-
     // Функция удаления лекарства (доступна только администраторам)
     const handleDelete = async (id) => {
         try {
@@ -120,9 +118,19 @@ const MedicinesTable = ({ isAdmin }) => {
     };
 
     return (
-        <TableContainer component={Paper} sx={{ marginTop: 4, overflowX: 'auto', position: 'relative' }}>
+        <TableContainer
+            component={Paper}
+            sx={{
+                marginTop: 4,
+                overflowX: 'auto',
+                position: 'relative',
+                tableLayout: 'fixed', // Фиксированный макет таблицы
+                border: '1px solid #ddd', // Внешняя граница таблицы
+            }}
+        >
             {loading && (
-                <Stack
+                <Box
+                    display="flex"
                     alignItems="center"
                     justifyContent="center"
                     sx={{
@@ -134,78 +142,141 @@ const MedicinesTable = ({ isAdmin }) => {
                     }}
                 >
                     <CircularProgress />
-                </Stack>
+                </Box>
             )}
             {error ? (
-                <Alert severity="error">{error}</Alert>
+                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             ) : (
                 <>
                     <Table>
                         <TableHead sx={{ backgroundColor: '#1976d2' }}>
                             <TableRow>
                                 {/* Название препарата */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 150 : 100 }}>
-                                    <TableSortLabel
-                                        active={orderBy === 'name'}
-                                        direction={orderBy === 'name' ? order : 'asc'}
-                                        onClick={() => handleSort('name')}
-                                        sx={{ color: '#ffffff' }}
-                                    >
-                                        Название
-                                    </TableSortLabel>
-                                </TableCell>
+                                <StyledTableCell
+                                    sx={{
+                                        color: '#ffffff',
+                                        fontWeight: 'bold',
+                                        width: '250px', // Фиксированная ширина
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}
+                                >
+                                    <Tooltip title="Название препарата">
+                                        <span>
+                                            <TableSortLabel
+                                                active={orderBy === 'name'}
+                                                direction={orderBy === 'name' ? order : 'asc'}
+                                                onClick={() => handleSort('name')}
+                                                sx={{ color: '#ffffff' }}
+                                                hideSortIcon={false} // Всегда показывать иконку сортировки
+                                            >
+                                                Название
+                                            </TableSortLabel>
+                                        </span>
+                                    </Tooltip>
+                                </StyledTableCell>
 
                                 {/* Серийный номер */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 150 : 100 }}>
-                                    <TableSortLabel
-                                        active={orderBy === 'serialNumber'}
-                                        direction={orderBy === 'serialNumber' ? order : 'asc'}
-                                        onClick={() => handleSort('serialNumber')}
-                                        sx={{ color: '#ffffff' }}
-                                    >
-                                        Серийный Номер
-                                    </TableSortLabel>
-                                </TableCell>
+                                <StyledTableCell
+                                    sx={{
+                                        color: '#ffffff',
+                                        fontWeight: 'bold',
+                                        width: '90px', // Уменьшенная фиксированная ширина
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        textAlign: 'center', // Центрирование содержимого
+                                    }}
+                                >
+                                    <Tooltip title="Уникальный серийный номер препарата">
+                                        <span>
+                                            <TableSortLabel
+                                                active={orderBy === 'serialNumber'}
+                                                direction={orderBy === 'serialNumber' ? order : 'asc'}
+                                                onClick={() => handleSort('serialNumber')}
+                                                sx={{ color: '#ffffff', justifyContent: 'center' }}
+                                                hideSortIcon={false}
+                                            >
+                                                Серийный Номер
+                                            </TableSortLabel>
+                                        </span>
+                                    </Tooltip>
+                                </StyledTableCell>
 
                                 {/* Срок годности */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 180 : 120 }}>
-                                    <TableSortLabel
-                                        active={orderBy === 'expirationDate'}
-                                        direction={orderBy === 'expirationDate' ? order : 'asc'}
-                                        onClick={() => handleSort('expirationDate')}
-                                        sx={{ color: '#ffffff' }}
-                                    >
-                                        Срок Годности
-                                    </TableSortLabel>
-                                </TableCell>
+                                <StyledTableCell
+                                    sx={{
+                                        color: '#ffffff',
+                                        fontWeight: 'bold',
+                                        width: '150px', // Уменьшенная фиксированная ширина
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}
+                                >
+                                    <Tooltip title="Дата истечения срока годности препарата">
+                                        <span>
+                                            <TableSortLabel
+                                                active={orderBy === 'expirationDate'}
+                                                direction={orderBy === 'expirationDate' ? order : 'asc'}
+                                                onClick={() => handleSort('expirationDate')}
+                                                sx={{ color: '#ffffff' }}
+                                                hideSortIcon={false}
+                                            >
+                                                Срок Годности
+                                            </TableSortLabel>
+                                        </span>
+                                    </Tooltip>
+                                </StyledTableCell>
 
                                 {/* Дополнительный столбец для администраторов */}
                                 {isAdmin && (
-                                    <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: 50 }}>
-                                        Действия
-                                    </TableCell>
+                                    <StyledTableCell
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 'bold',
+                                            width: '100px', // Фиксированная ширина
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                        }}
+                                    >
+                                        <Tooltip title="Действия">
+                                            <span>Действия</span>
+                                        </Tooltip>
+                                    </StyledTableCell>
                                 )}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {sortedMedicines.length > 0 ? (
-                                sortedMedicines.map((medicine) => (
-                                    <TableRow
-                                        key={medicine.id}
-                                        hover
-                                        sx={{
-                                            '&:nth-of-type(odd)': {
-                                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                                            },
-                                        }}
-                                    >
-                                        <TableCell sx={{ minWidth: isAdmin ? 150 : 100 }}>
-                                            {medicine.name}
-                                        </TableCell>
-                                        <TableCell sx={{ minWidth: isAdmin ? 150 : 100 }}>
-                                            {medicine.serialNumber}
-                                        </TableCell>
-                                        <TableCell
+                            {medicines.length > 0 ? (
+                                medicines.map((medicine) => (
+                                    <StyledTableRow key={medicine.id}>
+                                        <StyledTableCell
+                                            sx={{
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            <Tooltip title={medicine.name} arrow>
+                                                <span>{medicine.name}</span>
+                                            </Tooltip>
+                                        </StyledTableCell>
+                                        <StyledTableCell
+                                            sx={{
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                textAlign: 'center', // Центрирование содержимого
+                                            }}
+                                        >
+                                            <Tooltip title={medicine.serialNumber} arrow>
+                                                <span>{medicine.serialNumber}</span>
+                                            </Tooltip>
+                                        </StyledTableCell>
+                                        <StyledTableCell
                                             sx={{
                                                 backgroundColor: medicine.color, // Используем цвет из JSON
                                                 color: '#ffffff',
@@ -213,10 +284,17 @@ const MedicinesTable = ({ isAdmin }) => {
                                                 borderRadius: '4px',
                                                 fontWeight: 'bold',
                                                 cursor: 'default',
-                                                minWidth: isAdmin ? 180 : 120,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
                                             }}
                                         >
-                                            <Tooltip title={`Срок истекает через ${getDaysRemaining(medicine.expirationDate)} дней`}>
+                                            <Tooltip
+                                                title={`Срок истекает через ${getDaysRemaining(
+                                                    medicine.expirationDate
+                                                )} дней`}
+                                                arrow
+                                            >
                                                 <span>
                                                     {format(
                                                         parse(medicine.expirationDate, 'dd-MM-yyyy', new Date()),
@@ -225,26 +303,39 @@ const MedicinesTable = ({ isAdmin }) => {
                                                     )}
                                                 </span>
                                             </Tooltip>
-                                        </TableCell>
+                                        </StyledTableCell>
                                         {isAdmin && (
-                                            <TableCell sx={{ minWidth: 50 }}>
-                                                <IconButton
-                                                    aria-label="delete"
-                                                    color="error"
-                                                    onClick={() => handleDelete(medicine.id)}
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </TableCell>
+                                            <StyledTableCell
+                                                sx={{
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    textAlign: 'center',
+                                                }}
+                                            >
+                                                <Tooltip title="Удалить" arrow>
+                                                    <IconButton
+                                                        aria-label="delete"
+                                                        color="error"
+                                                        onClick={() => handleDelete(medicine.id)}
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </StyledTableCell>
                                         )}
-                                    </TableRow>
+                                    </StyledTableRow>
                                 ))
                             ) : (
-                                <TableRow>
-                                    <TableCell colSpan={isAdmin ? 4 : 3} align="center">
+                                <StyledTableRow>
+                                    <StyledTableCell
+                                        colSpan={isAdmin ? 4 : 3}
+                                        align="center"
+                                        sx={{ padding: '12px 16px' }}
+                                    >
                                         Нет данных
-                                    </TableCell>
-                                </TableRow>
+                                    </StyledTableCell>
+                                </StyledTableRow>
                             )}
                         </TableBody>
                     </Table>
@@ -261,7 +352,8 @@ const MedicinesTable = ({ isAdmin }) => {
                     </Stack>
                 </>
             )}
-        </TableContainer>)
+        </TableContainer>
+    );
 };
 
 export default MedicinesTable;
