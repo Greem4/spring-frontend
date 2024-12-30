@@ -1,4 +1,3 @@
-// src/components/MedicinesTable.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -14,12 +13,14 @@ import {
     Stack,
     CircularProgress,
     Alert,
-    Tooltip
+    Tooltip,
+    IconButton
 } from '@mui/material';
 import { format, parse, differenceInDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import DeleteIcon from '@mui/icons-material/Delete'; // Пример иконки для админских действий
 
-const MedicinesTable = () => {
+const MedicinesTable = ({ isAdmin }) => {
     const [medicines, setMedicines] = useState([]);
     const [order, setOrder] = useState('asc'); // 'asc' или 'desc'
     const [orderBy, setOrderBy] = useState('name'); // Поле для сортировки
@@ -105,8 +106,20 @@ const MedicinesTable = () => {
 
     const sortedMedicines = sortData([...medicines], order, orderBy);
 
+    // Пример функции удаления лекарства (для администраторов)
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`http://localhost:8080/api/medicines/${id}`);
+            // Обновление списка после удаления
+            setMedicines(prev => prev.filter(med => med.id !== id));
+        } catch (err) {
+            console.error('Ошибка при удалении лекарства:', err);
+            setError('Не удалось удалить лекарство. Пожалуйста, попробуйте позже.');
+        }
+    };
+
     return (
-        <TableContainer component={Paper} sx={{ marginTop: 4 }}>
+        <TableContainer component={Paper} sx={{ marginTop: 4, overflowX: 'auto' }}>
             {loading ? (
                 <Stack alignItems="center" padding={4}>
                     <CircularProgress />
@@ -119,7 +132,7 @@ const MedicinesTable = () => {
                         <TableHead sx={{ backgroundColor: '#1976d2' }}>
                             <TableRow>
                                 {/* Название препарата */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold' }}>
+                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 150 : 100 }}>
                                     <TableSortLabel
                                         active={orderBy === 'name'}
                                         direction={orderBy === 'name' ? order : 'asc'}
@@ -131,7 +144,7 @@ const MedicinesTable = () => {
                                 </TableCell>
 
                                 {/* Серийный номер */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold' }}>
+                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 150 : 100 }}>
                                     <TableSortLabel
                                         active={orderBy === 'serialNumber'}
                                         direction={orderBy === 'serialNumber' ? order : 'asc'}
@@ -143,7 +156,7 @@ const MedicinesTable = () => {
                                 </TableCell>
 
                                 {/* Срок годности */}
-                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold' }}>
+                                <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: isAdmin ? 180 : 120 }}>
                                     <TableSortLabel
                                         active={orderBy === 'expirationDate'}
                                         direction={orderBy === 'expirationDate' ? order : 'asc'}
@@ -153,6 +166,13 @@ const MedicinesTable = () => {
                                         Срок Годности
                                     </TableSortLabel>
                                 </TableCell>
+
+                                {/* Дополнительный столбец для администраторов */}
+                                {isAdmin && (
+                                    <TableCell sx={{ color: '#ffffff', fontWeight: 'bold', minWidth: 50 }}>
+                                        Действия
+                                    </TableCell>
+                                )}
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -167,8 +187,12 @@ const MedicinesTable = () => {
                                             },
                                         }}
                                     >
-                                        <TableCell>{medicine.name}</TableCell>
-                                        <TableCell>{medicine.serialNumber}</TableCell>
+                                        <TableCell sx={{ minWidth: isAdmin ? 150 : 100 }}>
+                                            {medicine.name}
+                                        </TableCell>
+                                        <TableCell sx={{ minWidth: isAdmin ? 150 : 100 }}>
+                                            {medicine.serialNumber}
+                                        </TableCell>
                                         <TableCell
                                             sx={{
                                                 backgroundColor: medicine.color, // Используем цвет из JSON
@@ -177,6 +201,7 @@ const MedicinesTable = () => {
                                                 borderRadius: '4px',
                                                 fontWeight: 'bold',
                                                 cursor: 'default',
+                                                minWidth: isAdmin ? 180 : 120,
                                             }}
                                         >
                                             <Tooltip title={`Срок истекает через ${getDaysRemaining(medicine.expirationDate)} дней`}>
@@ -189,11 +214,22 @@ const MedicinesTable = () => {
                                                 </span>
                                             </Tooltip>
                                         </TableCell>
+                                        {isAdmin && (
+                                            <TableCell sx={{ minWidth: 50 }}>
+                                                <IconButton
+                                                    aria-label="delete"
+                                                    color="error"
+                                                    onClick={() => handleDelete(medicine.id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} align="center">
+                                    <TableCell colSpan={isAdmin ? 4 : 3} align="center">
                                         Нет данных
                                     </TableCell>
                                 </TableRow>
@@ -213,8 +249,7 @@ const MedicinesTable = () => {
                     </Stack>
                 </>
             )}
-        </TableContainer>
-    );
+        </TableContainer>)
 };
 
 export default MedicinesTable;
