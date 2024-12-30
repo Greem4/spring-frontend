@@ -1,3 +1,4 @@
+// src/components/MedicinesTable.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -18,7 +19,7 @@ import {
 } from '@mui/material';
 import { format, parse, differenceInDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import DeleteIcon from '@mui/icons-material/Delete'; // Пример иконки для админских действий
+import DeleteIcon from '@mui/icons-material/Delete'; // Иконка для удаления
 
 const MedicinesTable = ({ isAdmin }) => {
     const [medicines, setMedicines] = useState([]);
@@ -106,7 +107,7 @@ const MedicinesTable = ({ isAdmin }) => {
 
     const sortedMedicines = sortData([...medicines], order, orderBy);
 
-    // Пример функции удаления лекарства (для администраторов)
+    // Функция удаления лекарства (доступна только администраторам)
     const handleDelete = async (id) => {
         try {
             await axios.delete(`http://localhost:8080/api/medicines/${id}`);
@@ -119,12 +120,23 @@ const MedicinesTable = ({ isAdmin }) => {
     };
 
     return (
-        <TableContainer component={Paper} sx={{ marginTop: 4, overflowX: 'auto' }}>
-            {loading ? (
-                <Stack alignItems="center" padding={4}>
+        <TableContainer component={Paper} sx={{ marginTop: 4, overflowX: 'auto', position: 'relative' }}>
+            {loading && (
+                <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 1,
+                    }}
+                >
                     <CircularProgress />
                 </Stack>
-            ) : error ? (
+            )}
+            {error ? (
                 <Alert severity="error">{error}</Alert>
             ) : (
                 <>
