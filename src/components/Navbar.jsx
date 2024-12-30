@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React, { useState } from 'react';
 import {
     AppBar,
@@ -7,11 +6,12 @@ import {
     Avatar,
     Box,
     Button,
-    Tooltip
+    Tooltip,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LoginDialog from './LoginDialog';
 import RegisterDialog from './RegisterDialog';
+import { Link } from 'react-router-dom'; // Добавлено для маршрутизации
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
     const [openLogin, setOpenLogin] = useState(false);
@@ -58,12 +58,11 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                             <Typography variant="body1" sx={{ marginRight: 2 }}>
                                 {user.username}
                             </Typography>
+                            {/* Показывать вкладку "Администратор", если роль ADMIN */}
                             {user.role === 'ADMIN' && (
-                                <Tooltip title="Администратор">
-                                    <Avatar sx={{ bgcolor: '#d32f2f', marginRight: 2 }}>
-                                        A
-                                    </Avatar>
-                                </Tooltip>
+                                <Button color="inherit" component={Link} to="/admin">
+                                    Администратор
+                                </Button>
                             )}
                             <Button color="inherit" onClick={handleLogout}>
                                 Выход

@@ -1,8 +1,9 @@
-// src/App.jsx
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Добавлен React Router
 import { Container } from '@mui/material';
 import Navbar from './components/Navbar';
 import MedicinesTable from './components/MedicinesTable';
+import AdminMenu from './components/AdminMenu'; // Импорт компонента AdminMenu
 import axios from 'axios';
 
 function App() {
@@ -14,10 +15,8 @@ function App() {
     useEffect(() => {
         const token = localStorage.getItem('authToken');
         if (token) {
-            // Установка заголовка Authorization для всех запросов axios
             axios.defaults.headers.common['Authorization'] = token;
 
-            // Запрос профиля пользователя
             const fetchProfile = async () => {
                 try {
                     const response = await axios.get('http://localhost:8080/api/users/profile');
@@ -26,8 +25,6 @@ function App() {
                         user: response.data,
                     });
                 } catch (err) {
-                    console.log('Пользователь не аутентифицирован или токен истёк');
-                    // Очистка невалидного токена
                     localStorage.removeItem('authToken');
                     delete axios.defaults.headers.common['Authorization'];
                 }
@@ -40,7 +37,6 @@ function App() {
     const handleLogout = async () => {
         try {
             await axios.post('http://localhost:8080/api/auth/logout');
-            // Очистка состояния аутентификации и заголовка
             setAuth({
                 isAuthenticated: false,
                 user: null,
@@ -53,7 +49,7 @@ function App() {
     };
 
     return (
-        <div>
+        <Router>
             <Navbar
                 isAuthenticated={auth.isAuthenticated}
                 user={auth.user}
@@ -61,9 +57,28 @@ function App() {
                 setAuth={setAuth}
             />
             <Container maxWidth="lg" sx={{ marginTop: 4 }}>
-                <MedicinesTable isAdmin={auth.user?.role === 'ADMIN'} />
+                <Routes>
+                    {/* Таблица лекарств */}
+                    <Route
+                        path="/medicines"
+                        element={<MedicinesTable isAdmin={auth.user?.role === 'ADMIN'} />}
+                    />
+                    {/* Страница администратора */}
+                    <Route
+                        path="/admin"
+                        element={
+                            auth.user?.role === 'ADMIN' ? (
+                                <AdminMenu />
+                            ) : (
+                                <Navigate to="/medicines" />
+                            )
+                        }
+                    />
+                    {/* Редирект на Таблицу лекарств по умолчанию */}
+                    <Route path="*" element={<Navigate to="/medicines" />} />
+                </Routes>
             </Container>
-        </div>
+        </Router>
     );
 }
 
