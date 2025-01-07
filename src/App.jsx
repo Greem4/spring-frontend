@@ -6,6 +6,7 @@ import MedicinesTable from './components/MedicinesTable';
 import AdminMenu from './components/AdminMenu';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
 
 function App() {
     const { auth, setAuth } = useContext(AuthContext);
@@ -30,16 +31,14 @@ function App() {
                 isAuthenticated={auth.isAuthenticated}
                 user={auth.user}
                 handleLogout={handleLogout}
-                setAuth={setAuth}
             />
             <Container maxWidth="lg" sx={{ marginTop: 4 }}>
                 <Routes>
-                    {/* Маршрут доступен для всех, авторизация не требуется */}
+                    <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
                     <Route
                         path="/medicines"
                         element={<MedicinesTable isAdmin={auth.user?.role === 'ADMIN'} />}
                     />
-                    {/* Маршрут администратора доступен только для админов */}
                     <Route
                         path="/admin"
                         element={
@@ -50,7 +49,6 @@ function App() {
                             )
                         }
                     />
-                    {/* Редирект всех неизвестных маршрутов на страницу лекарств */}
                     <Route path="*" element={<Navigate to="/medicines" />} />
                 </Routes>
             </Container>

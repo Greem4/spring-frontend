@@ -1,5 +1,6 @@
 import React, { useEffect, useContext } from 'react';
 import axios from 'axios';
+import * as jwtDecode from 'jwt-decode';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../AuthContext';
 
@@ -14,19 +15,31 @@ const OAuth2RedirectHandler = () => {
 
         if (token) {
             const authToken = `Bearer ${token}`;
+            // Сохраняем токен и устанавливаем заголовок для axios
             localStorage.setItem('authToken', authToken);
             axios.defaults.headers.common['Authorization'] = authToken;
 
-            // Здесь можно декодировать token, получить пользователя и установить состояние
-            // Для примера установим фиктивные данные
-            const userData = { role: 'USER', username: 'YandexUser' };
+            // Декодируем JWT для извлечения информации о пользователе и ролях
+            let userData = {};
+            try {
+                const decoded = jwtDecode(token);
+                // Предполагается, что в JWT есть поля sub и role
+                userData = {
+                    username: decoded.sub,
+                    // Пример определения роли: если в массиве ролей есть ROLE_ADMIN — считаем пользователя администратором
+                    role: decoded.role && decoded.role.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER'
+                };
+            } catch (e) {
+                console.error('Ошибка декодирования JWT:', e);
+            }
 
+            // Обновляем контекст аутентификации
             setAuth({ isAuthenticated: true, user: userData });
 
-            // Перенаправление на нужную страницу после авторизации
+            // Перенаправляем пользователя на страницу со списком лекарств
             navigate('/medicines');
         } else {
-            console.error('Token not found in URL.');
+            console.error('Токен не найден в URL.');
         }
     }, [location, navigate, setAuth]);
 
