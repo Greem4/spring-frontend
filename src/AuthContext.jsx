@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
 
             const fetchProfile = async () => {
                 try {
-                    const response = await axios.get('http://localhost:8080/api/users/profile');
+                    const response = await axios.get('http://localhost:8080/api/v1/users/profile');
                     setAuth({
                         isAuthenticated: true,
                         user: response.data,
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8080/api/auth/logout');
+            await axios.post('http://localhost:8080/api/v1/auth/logout');
             setAuth({
                 isAuthenticated: false,
                 user: null,

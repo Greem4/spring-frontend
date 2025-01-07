@@ -1,5 +1,4 @@
-// src/components/LoginDialog.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -17,15 +16,17 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
+import { AuthContext } from '../AuthContext';
 
-const LoginDialog = ({ open, handleClose, setAuth }) => {
+const LoginDialog = ({ open, handleClose }) => {
+    const { setAuth } = useContext(AuthContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
 
     const handleTogglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
+        setShowPassword((prev) => !prev);
     };
 
     const handleLogin = async () => {
@@ -35,31 +36,24 @@ const LoginDialog = ({ open, handleClose, setAuth }) => {
         }
 
         try {
-            // Отправка запроса на вход без withCredentials
-            const response = await axios.post('http://localhost:8080/api/auth/login', {
+            const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
                 username,
-                password
+                password,
             });
 
             console.log('Ответ от бэкенда:', response.data);
 
             const { token, type, ...userData } = response.data;
-
             if (token && type) {
-                // Сохранение токена в localStorage
                 const authToken = `${type} ${token}`;
                 localStorage.setItem('authToken', authToken);
-
-                // Установка заголовка Authorization для всех запросов axios
                 axios.defaults.headers.common['Authorization'] = authToken;
 
-                // Установка состояния аутентификации
                 setAuth({
                     isAuthenticated: true,
-                    user: userData,
+                    user: { ...userData },
                 });
 
-                // Закрытие диалога
                 handleClose();
             } else {
                 setAuthError('Некорректный ответ от сервера');
@@ -72,6 +66,10 @@ const LoginDialog = ({ open, handleClose, setAuth }) => {
                 setAuthError('Произошла ошибка. Пожалуйста, попробуйте позже.');
             }
         }
+    };
+
+    const handleYandexLogin = () => {
+        window.location.href = 'http://localhost:8080/oauth2/authorization/yandex';
     };
 
     return (
@@ -111,9 +109,16 @@ const LoginDialog = ({ open, handleClose, setAuth }) => {
                     />
                 </FormControl>
             </DialogContent>
-            <DialogActions>
+            <DialogActions sx={{ justifyContent: 'space-between' }}>
                 <Button onClick={handleClose}>Отмена</Button>
-                <Button onClick={handleLogin} variant="contained">Войти</Button>
+                <div>
+                    <Button onClick={handleYandexLogin} sx={{ mr: 1 }}>
+                        Войти через Яндекс
+                    </Button>
+                    <Button onClick={handleLogin} variant="contained">
+                        Войти
+                    </Button>
+                </div>
             </DialogActions>
         </Dialog>
     );

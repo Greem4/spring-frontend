@@ -52,6 +52,13 @@ const MedicinesTable = ({ isAdmin }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Добавляем токен аутентификации из localStorage
+    const authHeader = {
+        headers: {
+            Authorization: localStorage.getItem('authToken'), // Токен уже содержит Bearer
+        },
+    };
+
     // Функция для определения оставшихся дней до истечения срока годности
     const getDaysRemaining = (dateStr) => {
         const today = new Date();
@@ -65,12 +72,13 @@ const MedicinesTable = ({ isAdmin }) => {
             setLoading(true);
             setError(null);
             try {
-                const response = await axios.get('http://localhost:8080/api/medicines', {
+                const response = await axios.get('http://localhost:8080/api/v1/medicines', {
                     params: {
                         page: currentPage - 1, // Бэкенд использует нумерацию страниц с 0
                         size: rowsPerPage,
                         sort: `${orderBy},${order}`,
                     },
+                    ...authHeader, // Передаём заголовки аутентификации
                 });
 
                 // Логирование ответа для отладки
@@ -108,12 +116,16 @@ const MedicinesTable = ({ isAdmin }) => {
     // Функция удаления лекарства (доступна только администраторам)
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`http://localhost:8080/api/medicines/${id}`);
-            // Обновление списка после удаления
-            setMedicines(prev => prev.filter(med => med.id !== id));
+            await axios.delete(`http://localhost:8080/api/v1/medicines/${id}`, {
+                headers: {
+                    Authorization: `${localStorage.getItem('authToken')}`, // Токен для аутентификации
+                },
+            });
+
+            setMedicines((prev) => prev.filter((med) => med.id !== id)); // Обновление списка после удаления
         } catch (err) {
             console.error('Ошибка при удалении лекарства:', err);
-            setError('Не удалось удалить лекарство. Пожалуйста, попробуйте позже.');
+            setError('Не удалось удалить лекарство. Проверьте права доступа.');
         }
     };
 

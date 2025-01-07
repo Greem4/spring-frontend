@@ -1,12 +1,14 @@
+// src/index.js или src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './index.css';
-import { CssBaseline } from '@mui/material';
+import { AuthProvider } from './AuthContext';  // Импортируем AuthProvider
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
     <React.StrictMode>
-        <CssBaseline /> {/* Базовые стили Material-UI */}
-        <App />
+        <AuthProvider>
+            <App />
+        </AuthProvider>
     </React.StrictMode>
 );

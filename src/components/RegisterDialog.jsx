@@ -42,7 +42,7 @@ const RegisterDialog = ({ open, handleClose, setAuth }) => {
         }
 
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/register', {
+            const response = await axios.post('http://localhost:8080/api/v1/auth/register', {
                 username,
                 password
             }, { withCredentials: true });

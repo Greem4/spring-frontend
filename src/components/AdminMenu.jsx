@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '../AuthContext';
 import {
     Box,
     Typography,
@@ -15,16 +16,21 @@ import {
 import axios from 'axios';
 
 const AdminMenu = () => {
+    const { auth } = useContext(AuthContext);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    if (!auth.isAuthenticated || auth.user.role !== 'ADMIN') {
+        return <Alert severity="warning">Доступ запрещён</Alert>;
+    }
 
     useEffect(() => {
         const fetchUsers = async () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await axios.get('http://localhost:8080/api/users');
+                const response = await axios.get('http://localhost:8080/api/v1/admin/users');
                 setUsers(response.data);
             } catch (err) {
                 console.error('Ошибка при загрузке пользователей:', err);
@@ -33,13 +39,12 @@ const AdminMenu = () => {
                 setLoading(false);
             }
         };
-
         fetchUsers();
     }, []);
 
     const handleDeleteUser = async (id) => {
         try {
-            await axios.delete(`http://localhost:8080/api/users/${id}`);
+            await axios.delete(`http://localhost:8080/api/v1/admin/users/${id}`);
             setUsers((prev) => prev.filter((user) => user.id !== id));
         } catch (err) {
             console.error('Ошибка при удалении пользователя:', err);

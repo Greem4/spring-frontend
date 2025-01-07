@@ -1,42 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Добавлен React Router
+import React, { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Container } from '@mui/material';
 import Navbar from './components/Navbar';
 import MedicinesTable from './components/MedicinesTable';
-import AdminMenu from './components/AdminMenu'; // Импорт компонента AdminMenu
+import AdminMenu from './components/AdminMenu';
 import axios from 'axios';
+import { AuthContext } from './AuthContext';
 
 function App() {
-    const [auth, setAuth] = useState({
-        isAuthenticated: false,
-        user: null,
-    });
-
-    useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = token;
-
-            const fetchProfile = async () => {
-                try {
-                    const response = await axios.get('http://localhost:8080/api/users/profile');
-                    setAuth({
-                        isAuthenticated: true,
-                        user: response.data,
-                    });
-                } catch (err) {
-                    localStorage.removeItem('authToken');
-                    delete axios.defaults.headers.common['Authorization'];
-                }
-            };
-
-            fetchProfile();
-        }
-    }, []);
+    const { auth, setAuth } = useContext(AuthContext);
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8080/api/auth/logout');
+            await axios.post('http://localhost:8080/api/v1/auth/logout');
             setAuth({
                 isAuthenticated: false,
                 user: null,
@@ -58,12 +34,12 @@ function App() {
             />
             <Container maxWidth="lg" sx={{ marginTop: 4 }}>
                 <Routes>
-                    {/* Таблица лекарств */}
+                    {/* Маршрут доступен для всех, авторизация не требуется */}
                     <Route
                         path="/medicines"
                         element={<MedicinesTable isAdmin={auth.user?.role === 'ADMIN'} />}
                     />
-                    {/* Страница администратора */}
+                    {/* Маршрут администратора доступен только для админов */}
                     <Route
                         path="/admin"
                         element={
@@ -74,7 +50,7 @@ function App() {
                             )
                         }
                     />
-                    {/* Редирект на Таблицу лекарств по умолчанию */}
+                    {/* Редирект всех неизвестных маршрутов на страницу лекарств */}
                     <Route path="*" element={<Navigate to="/medicines" />} />
                 </Routes>
             </Container>
