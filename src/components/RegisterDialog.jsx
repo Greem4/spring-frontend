@@ -1,4 +1,3 @@
-// src/components/RegisterDialog.jsx
 import React, { useState } from 'react';
 import {
     Dialog,
@@ -23,7 +22,6 @@ const RegisterDialog = ({ open, handleClose, setAuth }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [registerError, setRegisterError] = useState(null);
-    const [registerSuccess, setRegisterSuccess] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
 
     const handleTogglePasswordVisibility = () => {
@@ -42,26 +40,34 @@ const RegisterDialog = ({ open, handleClose, setAuth }) => {
         }
 
         try {
-            const response = await axios.post('http://localhost:8080/api/v1/auth/register', {
+            // Регистрация
+            await axios.post('http://localhost:8080/api/v1/auth/register', {
                 username,
                 password
             }, { withCredentials: true });
 
-            console.log('Ответ от бэкенда:', response.data);
+            // Автоматический вход после регистрации
+            const loginResponse = await axios.post('http://localhost:8080/api/v1/auth/login', {
+                username,
+                password
+            }, { withCredentials: true });
 
-            setRegisterSuccess('Регистрация прошла успешно! Вы можете войти в систему.');
+            // Обновление контекста аутентификации
+            setAuth({ isAuthenticated: true, user: loginResponse.data });
+
+            // Очистка полей и закрытие диалога
             setRegisterError(null);
             setUsername('');
             setPassword('');
             setConfirmPassword('');
+            handleClose();
         } catch (err) {
-            console.error('Ошибка при регистрации:', err);
+            console.error('Ошибка при регистрации или входе:', err);
             if (err.response && err.response.status === 400) {
                 setRegisterError(err.response.data.message || 'Пользователь уже существует');
             } else {
                 setRegisterError('Произошла ошибка. Пожалуйста, попробуйте позже.');
             }
-            setRegisterSuccess(null);
         }
     };
 
@@ -70,7 +76,6 @@ const RegisterDialog = ({ open, handleClose, setAuth }) => {
             <DialogTitle>Регистрация</DialogTitle>
             <DialogContent>
                 {registerError && <Alert severity="error" sx={{ mb: 2 }}>{registerError}</Alert>}
-                {registerSuccess && <Alert severity="success" sx={{ mb: 2 }}>{registerSuccess}</Alert>}
                 <TextField
                     autoFocus
                     margin="dense"

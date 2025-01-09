@@ -3,69 +3,44 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Button,
     Box,
+    Button,
     IconButton,
     Menu,
     MenuItem,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { Link } from 'react-router-dom';
 import LoginDialog from './LoginDialog';
 import RegisterDialog from './RegisterDialog';
-import { Link } from 'react-router-dom';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
     const [openLogin, setOpenLogin] = useState(false);
     const [openRegister, setOpenRegister] = useState(false);
     const [anchorElUser, setAnchorElUser] = useState(null);
 
-    const handleLoginOpen = () => {
-        setOpenLogin(true);
-    };
+    const handleLoginOpen = () => setOpenLogin(true);
+    const handleLoginClose = () => setOpenLogin(false);
+    const handleRegisterOpen = () => setOpenRegister(true);
+    const handleRegisterClose = () => setOpenRegister(false);
 
-    const handleLoginClose = () => {
-        setOpenLogin(false);
-    };
-
-    const handleRegisterOpen = () => {
-        setOpenRegister(true);
-    };
-
-    const handleRegisterClose = () => {
-        setOpenRegister(false);
-    };
-
-    const handleOpenUserMenu = (event) => {
-        setAnchorElUser(event.currentTarget);
-    };
-
-    const handleCloseUserMenu = () => {
-        setAnchorElUser(null);
-    };
-
-    const onLogout = () => {
-        handleLogout();
-        handleCloseUserMenu();
-    };
+    const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
+    const handleCloseUserMenu = () => setAnchorElUser(null);
 
     return (
         <>
             <AppBar position="static">
                 <Toolbar>
-                    {/* Название приложения */}
-                    <Typography variant="h6" component="div" sx={{ mr: 2 }}>
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Medicine Manager
                     </Typography>
 
-                    {/* Навигационные ссылки */}
-                    <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button color="inherit" component={Link} to="/medicines">
                             Лекарства
                         </Button>
-                        {/* Добавьте другие ссылки по мере необходимости */}
                     </Box>
 
-                    {/* Если пользователь не аутентифицирован, показываем кнопки Вход и Регистрация */}
                     {!isAuthenticated ? (
                         <>
                             <Button color="inherit" onClick={handleLoginOpen}>
@@ -76,7 +51,6 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                             </Button>
                         </>
                     ) : (
-                        /* Если аутентифицирован, показываем всплывающее меню пользователя */
                         <>
                             <IconButton
                                 size="large"
@@ -90,19 +64,16 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                                 anchorEl={anchorElUser}
                                 open={Boolean(anchorElUser)}
                                 onClose={handleCloseUserMenu}
-                                anchorOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
+                                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                             >
-                                <MenuItem disabled>
-                                    <Typography textAlign="center">
-                                        {user.username}
-                                    </Typography>
+                                <MenuItem disabled>{user.username}</MenuItem>
+                                <MenuItem
+                                    component={Link}
+                                    to="/profile"
+                                    onClick={handleCloseUserMenu}
+                                >
+                                    Мой профиль
                                 </MenuItem>
                                 {user.role === 'ADMIN' && (
                                     <MenuItem
@@ -113,8 +84,13 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                                         Администратор
                                     </MenuItem>
                                 )}
-                                <MenuItem onClick={onLogout}>
-                                    <Typography textAlign="center">Выход</Typography>
+                                <MenuItem
+                                    onClick={() => {
+                                        handleLogout();
+                                        handleCloseUserMenu();
+                                    }}
+                                >
+                                    Выход
                                 </MenuItem>
                             </Menu>
                         </>
@@ -122,10 +98,7 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                 </Toolbar>
             </AppBar>
 
-            {/* Диалоговое окно для входа */}
             <LoginDialog open={openLogin} handleClose={handleLoginClose} setAuth={setAuth} />
-
-            {/* Диалоговое окно для регистрации */}
             <RegisterDialog open={openRegister} handleClose={handleRegisterClose} setAuth={setAuth} />
         </>
     );

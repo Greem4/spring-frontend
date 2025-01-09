@@ -4,6 +4,7 @@ import { Container } from '@mui/material';
 import Navbar from './components/Navbar';
 import MedicinesTable from './components/MedicinesTable';
 import AdminMenu from './components/AdminMenu';
+import UserProfile from './components/UserProfile';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
@@ -31,6 +32,7 @@ function App() {
                 isAuthenticated={auth.isAuthenticated}
                 user={auth.user}
                 handleLogout={handleLogout}
+                setAuth={setAuth}
             />
             <Container maxWidth="lg" sx={{ marginTop: 4 }}>
                 <Routes>
@@ -44,6 +46,16 @@ function App() {
                         element={
                             auth.user?.role === 'ADMIN' ? (
                                 <AdminMenu />
+                            ) : (
+                                <Navigate to="/medicines" />
+                            )
+                        }
+                    />
+                    <Route
+                        path="/profile"
+                        element={
+                            auth.isAuthenticated ? (
+                                <UserProfile />
                             ) : (
                                 <Navigate to="/medicines" />
                             )
