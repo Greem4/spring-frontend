@@ -3,19 +3,21 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Avatar,
-    Box,
     Button,
-    Tooltip,
+    Box,
+    IconButton,
+    Menu,
+    MenuItem,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LoginDialog from './LoginDialog';
 import RegisterDialog from './RegisterDialog';
-import { Link } from 'react-router-dom'; // Добавлено для маршрутизации
+import { Link } from 'react-router-dom';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
     const [openLogin, setOpenLogin] = useState(false);
     const [openRegister, setOpenRegister] = useState(false);
+    const [anchorElUser, setAnchorElUser] = useState(null);
 
     const handleLoginOpen = () => {
         setOpenLogin(true);
@@ -33,14 +35,35 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
         setOpenRegister(false);
     };
 
+    const handleOpenUserMenu = (event) => {
+        setAnchorElUser(event.currentTarget);
+    };
+
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
+
+    const onLogout = () => {
+        handleLogout();
+        handleCloseUserMenu();
+    };
+
     return (
         <>
             <AppBar position="static">
                 <Toolbar>
                     {/* Название приложения */}
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" component="div" sx={{ mr: 2 }}>
                         Medicine Manager
                     </Typography>
+
+                    {/* Навигационные ссылки */}
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Button color="inherit" component={Link} to="/medicines">
+                            Лекарства
+                        </Button>
+                        {/* Добавьте другие ссылки по мере необходимости */}
+                    </Box>
 
                     {/* Если пользователь не аутентифицирован, показываем кнопки Вход и Регистрация */}
                     {!isAuthenticated ? (
@@ -53,21 +76,48 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                             </Button>
                         </>
                     ) : (
-                        /* Если аутентифицирован, показываем информацию о пользователе и кнопку Выход */
-                        <Box display="flex" alignItems="center">
-                            <Typography variant="body1" sx={{ marginRight: 2 }}>
-                                {user.username}
-                            </Typography>
-                            {/* Показывать вкладку "Администратор", если роль ADMIN */}
-                            {user.role === 'ADMIN' && (
-                                <Button color="inherit" component={Link} to="/admin">
-                                    Администратор
-                                </Button>
-                            )}
-                            <Button color="inherit" onClick={handleLogout}>
-                                Выход
-                            </Button>
-                        </Box>
+                        /* Если аутентифицирован, показываем всплывающее меню пользователя */
+                        <>
+                            <IconButton
+                                size="large"
+                                edge="end"
+                                color="inherit"
+                                onClick={handleOpenUserMenu}
+                            >
+                                <AccountCircleIcon />
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorElUser}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
+                                anchorOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                            >
+                                <MenuItem disabled>
+                                    <Typography textAlign="center">
+                                        {user.username}
+                                    </Typography>
+                                </MenuItem>
+                                {user.role === 'ADMIN' && (
+                                    <MenuItem
+                                        component={Link}
+                                        to="/admin"
+                                        onClick={handleCloseUserMenu}
+                                    >
+                                        Администратор
+                                    </MenuItem>
+                                )}
+                                <MenuItem onClick={onLogout}>
+                                    <Typography textAlign="center">Выход</Typography>
+                                </MenuItem>
+                            </Menu>
+                        </>
                     )}
                 </Toolbar>
             </AppBar>

@@ -3,23 +3,27 @@ import { AuthContext } from '../AuthContext';
 import {
     Box,
     Typography,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemAvatar,
+    Avatar,
     Paper,
-    Button,
     CircularProgress,
     Alert,
+    Chip,
+    Divider,
 } from '@mui/material';
 import axios from 'axios';
+import UserInfoDialog from './UserInfoDialog';
 
 const AdminMenu = () => {
     const { auth } = useContext(AuthContext);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
 
     if (!auth.isAuthenticated || auth.user.role !== 'ADMIN') {
         return <Alert severity="warning">Доступ запрещён</Alert>;
@@ -31,7 +35,8 @@ const AdminMenu = () => {
             setError(null);
             try {
                 const response = await axios.get('http://localhost:8080/api/v1/admin/users');
-                setUsers(response.data);
+                const usersData = response.data._embedded?.userResponseList || [];
+                setUsers(usersData);
             } catch (err) {
                 console.error('Ошибка при загрузке пользователей:', err);
                 setError('Не удалось загрузить пользователей.');
@@ -42,54 +47,121 @@ const AdminMenu = () => {
         fetchUsers();
     }, []);
 
+    const handleOpenUserDialog = (user) => {
+        setSelectedUser(user);
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setSelectedUser(null);
+        setOpenDialog(false);
+    };
+
     const handleDeleteUser = async (id) => {
         try {
             await axios.delete(`http://localhost:8080/api/v1/admin/users/${id}`);
             setUsers((prev) => prev.filter((user) => user.id !== id));
+            handleCloseDialog();
         } catch (err) {
             console.error('Ошибка при удалении пользователя:', err);
             setError('Не удалось удалить пользователя.');
         }
     };
 
+    const handleToggleEnabled = async (id) => {
+        const user = users.find(u => u.id === id);
+        if (!user) return;
+        try {
+            // Пока неизвестен корректный endpoint, симулируем переключение локально
+            setUsers(prev => {
+                const updated = prev.map(u => u.id === id ? { ...u, enabled: !u.enabled } : u);
+                if (selectedUser && selectedUser.id === id) {
+                    setSelectedUser({ ...selectedUser, enabled: !selectedUser.enabled });
+                }
+                return updated;
+            });
+            // Если появится рабочий endpoint, добавьте запрос axios.put(...) здесь.
+        } catch (err) {
+            console.error('Ошибка при изменении статуса пользователя:', err);
+            setError('Не удалось изменить статус пользователя.');
+        }
+    };
+
+    const handleRoleChange = async (id, newRole) => {
+        const user = users.find(u => u.id === id);
+        if (!user) return;
+        try {
+            const payload = { username: user.username, role: newRole };
+            await axios.put('http://localhost:8080/api/v1/admin/users/role', payload);
+            setUsers(prev => {
+                const updated = prev.map(u => u.id === id ? { ...u, role: newRole } : u);
+                if (selectedUser && selectedUser.id === id) {
+                    setSelectedUser({ ...selectedUser, role: newRole });
+                }
+                return updated;
+            });
+        } catch (err) {
+            console.error('Ошибка при изменении роли пользователя:', err);
+            setError('Не удалось изменить роль пользователя.');
+        }
+    };
+
+    if (loading) {
+        return <CircularProgress />;
+    }
+
+    if (error) {
+        return <Alert severity="error">{error}</Alert>;
+    }
+
     return (
-        <Box>
-            <Typography variant="h5" sx={{ mb: 2 }}>
-                Управление пользователями
+        <Box sx={{ p: 2 }}>
+            <Typography variant="h5" sx={{ mb: 2, textAlign: 'center' }}>
+                Список пользователей
             </Typography>
-            {loading ? (
-                <CircularProgress />
-            ) : error ? (
-                <Alert severity="error">{error}</Alert>
-            ) : (
-                <Paper>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Имя пользователя</TableCell>
-                                <TableCell>Роль</TableCell>
-                                <TableCell>Действия</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {users.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>{user.username}</TableCell>
-                                    <TableCell>{user.role}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="contained"
-                                            color="error"
-                                            onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                            Удалить
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Paper>
+            <Paper elevation={3} sx={{ maxWidth: 600, margin: '0 auto' }}>
+                <List>
+                    {users.map((user, index) => (
+                        <React.Fragment key={user.id}>
+                            <ListItem button onClick={() => handleOpenUserDialog(user)}>
+                                <ListItemAvatar>
+                                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                                        {user.username.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                </ListItemAvatar>
+                                <ListItemText
+                                    primary={user.username}
+                                    secondary={
+                                        <>
+                                            <Chip
+                                                label={`Роль: ${user.role}`}
+                                                size="small"
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Chip
+                                                label={user.enabled ? 'Включён' : 'Отключён'}
+                                                size="small"
+                                                color={user.enabled ? 'success' : 'default'}
+                                            />
+                                        </>
+                                    }
+                                />
+                            </ListItem>
+                            {index < users.length - 1 && <Divider variant="inset" component="li" />}
+                        </React.Fragment>
+                    ))}
+                </List>
+            </Paper>
+
+            {selectedUser && (
+                <UserInfoDialog
+                    open={openDialog}
+                    user={selectedUser}
+                    onClose={handleCloseDialog}
+                    onDelete={handleDeleteUser}
+                    onToggleEnabled={handleToggleEnabled}
+                    onRoleChange={handleRoleChange}
+                />
             )}
         </Box>
     );
