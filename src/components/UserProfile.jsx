@@ -1,11 +1,24 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Typography, Paper, Box, Chip, Button } from '@mui/material';
 import { AuthContext } from '../AuthContext';
 import ChangePasswordDialog from './ChangePasswordDialog';
+import axios from 'axios';
 
 const UserProfile = () => {
-    const { auth } = useContext(AuthContext);
+    const { auth, setAuth } = useContext(AuthContext);
     const [openChangePassword, setOpenChangePassword] = useState(false);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/api/v1/users/profile');
+                setAuth(prev => ({ ...prev, user: response.data }));
+            } catch (err) {
+                console.error('Ошибка при получении профиля:', err);
+            }
+        };
+        fetchProfile();
+    }, [setAuth]);
 
     if (!auth.isAuthenticated) {
         return <Typography variant="h6">Пользователь не авторизован</Typography>;

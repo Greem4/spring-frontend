@@ -36,28 +36,35 @@ const LoginDialog = ({ open, handleClose }) => {
         }
 
         try {
+            // Отправка запроса на логин
             const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
                 username,
                 password,
             });
 
-            console.log('Ответ от бэкенда:', response.data);
-
-            const { token, type, ...userData } = response.data;
+            // Сохранение токена авторизации
+            const { token, type } = response.data;
             if (token && type) {
                 const authToken = `${type} ${token}`;
                 localStorage.setItem('authToken', authToken);
                 axios.defaults.headers.common['Authorization'] = authToken;
-
-                setAuth({
-                    isAuthenticated: true,
-                    user: { ...userData },
-                });
-
-                handleClose();
             } else {
-                setAuthError('Некорректный ответ от сервера');
+                throw new Error('Токен не получен');
             }
+
+            // Получение профиля пользователя после авторизации
+            const profileResponse = await axios.get('http://localhost:8080/api/v1/users/profile', {
+                withCredentials: true,
+            });
+
+            // Обновление контекста аутентификации с полученным профилем
+            setAuth({ isAuthenticated: true, user: profileResponse.data });
+
+            // Очистка полей и закрытие диалога
+            setAuthError(null);
+            setUsername('');
+            setPassword('');
+            handleClose();
         } catch (err) {
             console.error('Ошибка при авторизации:', err);
             if (err.response && err.response.status === 401) {
