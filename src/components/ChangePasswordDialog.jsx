@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions, Button,
-    FormControl, InputLabel, OutlinedInput, InputAdornment,
-    IconButton, Alert, Stack
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    FormControl,
+    InputLabel,
+    OutlinedInput,
+    InputAdornment,
+    IconButton,
+    Alert,
+    Stack,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -43,6 +52,7 @@ const ChangePasswordDialog = ({ open, handleClose, username }) => {
             setConfirmNewPassword('');
         } catch (err) {
             console.error('Ошибка при смене пароля:', err);
+            console.error('Ответ сервера:', err.response?.data);
             setError('Не удалось изменить пароль');
             setSuccess(null);
         }
@@ -55,7 +65,6 @@ const ChangePasswordDialog = ({ open, handleClose, username }) => {
                 <Stack spacing={2} sx={{ mt: 1 }}>
                     {error && <Alert severity="error">{error}</Alert>}
                     {success && <Alert severity="success">{success}</Alert>}
-                    {/* Поля ввода для паролей */}
                     <FormControl variant="outlined" fullWidth>
                         <InputLabel htmlFor="old-password">Старый пароль</InputLabel>
                         <OutlinedInput

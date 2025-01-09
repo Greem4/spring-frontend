@@ -72,15 +72,13 @@ const AdminMenu = () => {
         const user = users.find(u => u.id === id);
         if (!user) return;
         try {
-            // Пока неизвестен корректный endpoint, симулируем переключение локально
-            setUsers(prev => {
-                const updated = prev.map(u => u.id === id ? { ...u, enabled: !u.enabled } : u);
-                if (selectedUser && selectedUser.id === id) {
-                    setSelectedUser({ ...selectedUser, enabled: !selectedUser.enabled });
-                }
-                return updated;
-            });
-            // Если появится рабочий endpoint, добавьте запрос axios.put(...) здесь.
+            const action = user.enabled ? 'DISABLE' : 'ENABLE';
+            const response = await axios.put(`http://localhost:8080/api/v1/admin/users/${user.username}/${action}`);
+            const updatedUser = response.data;
+            setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
+            if (selectedUser && selectedUser.id === id) {
+                setSelectedUser(updatedUser);
+            }
         } catch (err) {
             console.error('Ошибка при изменении статуса пользователя:', err);
             setError('Не удалось изменить статус пользователя.');
