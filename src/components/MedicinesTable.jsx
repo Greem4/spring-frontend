@@ -17,13 +17,19 @@ import {
     Tooltip,
     IconButton,
     Box,
+    Checkbox,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
 } from '@mui/material';
 import { format, parse, differenceInDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import DeleteIcon from '@mui/icons-material/Delete'; // Иконка для удаления
 import { styled } from '@mui/material/styles';
 
-// Кастомные стили для TableCell и TableRow
+// ---------- Кастомные стили ----------
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     border: '1px solid #ddd',
     padding: '12px 16px',
@@ -42,329 +48,563 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     },
 }));
 
+// ---------- Основной компонент ----------
 const MedicinesTable = ({ isAdmin }) => {
     const [medicines, setMedicines] = useState([]);
-    const [order, setOrder] = useState('asc'); // 'asc' или 'desc'
-    const [orderBy, setOrderBy] = useState('name'); // Поле для сортировки
+
+    // Параметры сортировки
+    const [order, setOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState('name');
+
+    // Пагинация
     const [currentPage, setCurrentPage] = useState(1);
-    const rowsPerPage = 20; // Соответствует вашему бэкенду
+    const rowsPerPage = 20; // Кол-во записей на страницу
     const [totalPages, setTotalPages] = useState(1);
+
+    // Состояния загрузки, ошибок
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Добавляем токен аутентификации из localStorage
+    // --- Для выбора нескольких записей через чекбоксы ---
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    // --- Управление диалогом "Добавление/Редактирование" ---
+    const [openDialog, setOpenDialog] = useState(false);
+    // Режим диалога: либо "add" (добавить), либо "edit" (редактировать)
+    const [dialogMode, setDialogMode] = useState('add');
+    // Поля формы в диалоге
+    const [formData, setFormData] = useState({
+        id: '',
+        name: '',
+        serialNumber: '',
+        expirationDate: '',
+    });
+
+    // Добавляем токен аутентификации из localStorage (если нужно)
     const authHeader = {
         headers: {
-            Authorization: localStorage.getItem('authToken'), // Токен уже содержит Bearer
+            Authorization: localStorage.getItem('authToken'),
         },
     };
 
-    // Функция для определения оставшихся дней до истечения срока годности
+    // ---------- Функция для определения оставшихся дней до истечения срока ----------
     const getDaysRemaining = (dateStr) => {
         const today = new Date();
         const expirationDate = parse(dateStr, 'dd-MM-yyyy', new Date());
         return differenceInDays(expirationDate, today);
     };
 
-    // Загрузка данных с бэкенда
+    // ---------- Загрузка данных с бэкенда ----------
+    const fetchMedicines = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get('http://localhost:8080/api/v1/medicines', {
+                params: {
+                    page: currentPage - 1, // Бэкенд использует нумерацию страниц с 0
+                    size: rowsPerPage,
+                    sort: `${orderBy},${order}`,
+                },
+                ...authHeader,
+            });
+
+            // Логирование ответа для отладки
+            console.log('Ответ от бэкенда:', response.data);
+
+            // Извлечение данных из ответа
+            const medicinesData = response.data._embedded?.medicineViewList || [];
+            const totalPagesFromBackend = response.data.page?.totalPages || 1;
+
+            setMedicines(medicinesData);
+            setTotalPages(totalPagesFromBackend);
+        } catch (err) {
+            console.error('Ошибка при загрузке данных:', err);
+            setError('Не удалось загрузить данные. Пожалуйста, попробуйте позже.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ---------- Хук для загрузки данных при изменении сортировки/страницы ----------
     useEffect(() => {
-        const fetchMedicines = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await axios.get('http://localhost:8080/api/v1/medicines', {
-                    params: {
-                        page: currentPage - 1, // Бэкенд использует нумерацию страниц с 0
-                        size: rowsPerPage,
-                        sort: `${orderBy},${order}`,
-                    },
-                    ...authHeader, // Передаём заголовки аутентификации
-                });
-
-                // Логирование ответа для отладки
-                console.log('Ответ от бэкенда:', response.data);
-
-                // Извлечение данных из ответа
-                const medicinesData = response.data._embedded?.medicineViewList || [];
-                const totalPagesFromBackend = response.data.page?.totalPages || 1;
-
-                setMedicines(medicinesData);
-                setTotalPages(totalPagesFromBackend);
-            } catch (err) {
-                console.error('Ошибка при загрузке данных:', err);
-                setError('Не удалось загрузить данные. Пожалуйста, попробуйте позже.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchMedicines();
     }, [order, orderBy, currentPage, rowsPerPage]);
 
-    // Обработчик сортировки
+    // ---------- Обработчик сортировки ----------
     const handleSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
         setOrderBy(property);
     };
 
-    // Обработчик смены страницы
+    // ---------- Обработчик смены страницы ----------
     const handleChangePage = (event, newPage) => {
         setCurrentPage(newPage);
     };
 
-    // Функция удаления лекарства (доступна только администраторам)
-    const handleDelete = async (id) => {
-        try {
-            await axios.delete(`http://localhost:8080/api/v1/medicines/${id}`, {
-                headers: {
-                    Authorization: `${localStorage.getItem('authToken')}`, // Токен для аутентификации
-                },
-            });
+    // ---------- Обработчик выбора чекбокса (одна строка) ----------
+    const handleCheckboxChange = (id) => {
+        setSelectedIds((prevSelected) => {
+            if (prevSelected.includes(id)) {
+                // Удаляем из массива
+                return prevSelected.filter((item) => item !== id);
+            } else {
+                // Добавляем
+                return [...prevSelected, id];
+            }
+        });
+    };
 
-            setMedicines((prev) => prev.filter((med) => med.id !== id)); // Обновление списка после удаления
-        } catch (err) {
-            console.error('Ошибка при удалении лекарства:', err);
-            setError('Не удалось удалить лекарство. Проверьте права доступа.');
+    // ---------- Обработчик выбора всех чекбоксов (шапка таблицы) ----------
+    const handleSelectAll = (event) => {
+        if (event.target.checked) {
+            // Выделить все
+            const allIds = medicines.map((med) => med.id);
+            setSelectedIds(allIds);
+        } else {
+            // Снять выделение со всех
+            setSelectedIds([]);
         }
     };
 
+    // ---------- Удаление нескольких лекарств ----------
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        try {
+            // Выполняем несколько запросов DELETE (или один общий, если бэкенд поддерживает)
+            await Promise.all(
+                selectedIds.map((id) =>
+                    axios.delete(`http://localhost:8080/api/v1/medicines/${id}`, { ...authHeader })
+                )
+            );
+            // После удаления обновляем таблицу
+            fetchMedicines();
+            // Сбрасываем выбранные ID
+            setSelectedIds([]);
+        } catch (err) {
+            console.error('Ошибка при удалении лекарств:', err);
+            setError('Не удалось удалить некоторые или все выбранные препараты.');
+        }
+    };
+
+    // ---------- Открыть диалог для "добавления" ----------
+    const handleOpenAddDialog = () => {
+        setDialogMode('add');
+        setFormData({
+            id: '',
+            name: '',
+            serialNumber: '',
+            expirationDate: '',
+        });
+        setOpenDialog(true);
+    };
+
+    // ---------- Открыть диалог для "редактирования" ----------
+    const handleOpenEditDialog = (medicine) => {
+        setDialogMode('edit');
+        setFormData({
+            id: medicine.id,
+            name: medicine.name,
+            serialNumber: medicine.serialNumber,
+            expirationDate: medicine.expirationDate, // формат "dd-MM-yyyy"
+        });
+        setOpenDialog(true);
+    };
+
+    // ---------- Закрыть диалог ----------
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    // ---------- Обработчик изменения полей формы в диалоге ----------
+    const handleFormChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // ---------- Отправка формы (добавление или обновление) ----------
+    const handleSubmit = async () => {
+        try {
+            // Принимаем, что наш сервер ожидает данные именно в формате "dd-MM-yyyy"
+            if (dialogMode === 'add') {
+                // Запрос на создание
+                await axios.post(
+                    'http://localhost:8080/api/v1/medicines',
+                    {
+                        name: formData.name,
+                        serialNumber: formData.serialNumber,
+                        expirationDate: formData.expirationDate,
+                    },
+                    authHeader
+                );
+            } else {
+                // Запрос на обновление
+                await axios.put(
+                    `http://localhost:8080/api/v1/medicines/${formData.id}`,
+                    {
+                        name: formData.name,
+                        serialNumber: formData.serialNumber,
+                        expirationDate: formData.expirationDate,
+                    },
+                    authHeader
+                );
+            }
+
+            // После успешной операции обновим таблицу
+            fetchMedicines();
+            // Закроем диалог
+            setOpenDialog(false);
+        } catch (err) {
+            console.error('Ошибка при сохранении лекарства:', err);
+            setError('Не удалось сохранить изменения. Попробуйте ещё раз позже.');
+        }
+    };
+
+    // ---------- Удаление лекарства из диалога (режим edit) ----------
+    const handleDeleteFromDialog = async () => {
+        try {
+            await axios.delete(`http://localhost:8080/api/v1/medicines/${formData.id}`, {
+                ...authHeader,
+            });
+            fetchMedicines();
+            setOpenDialog(false);
+        } catch (err) {
+            console.error('Ошибка при удалении лекарства:', err);
+            setError('Не удалось удалить препарат. Попробуйте ещё раз позже.');
+        }
+    };
+
+    // ---------- JSX разметка ----------
     return (
-        <TableContainer
-            component={Paper}
-            sx={{
-                marginTop: 4,
-                overflowX: 'auto',
-                position: 'relative',
-                tableLayout: 'fixed', // Фиксированный макет таблицы
-                border: '1px solid #ddd', // Внешняя граница таблицы
-            }}
-        >
-            {loading && (
+        <Box sx={{ position: 'relative' }}>
+            {/* Кнопка "Добавить" (справа вверху) + Кнопка "Удалить выбранные" */}
+            {isAdmin && (
                 <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
                     sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 1,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 2,
+                        marginBottom: 2,
                     }}
                 >
-                    <CircularProgress />
+                    <Button variant="contained" color="primary" onClick={handleOpenAddDialog}>
+                        Добавить
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={handleDeleteSelected}
+                        disabled={selectedIds.length === 0}
+                    >
+                        Удалить выбранные
+                    </Button>
                 </Box>
             )}
-            {error ? (
-                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
-            ) : (
-                <>
-                    <Table>
-                        <TableHead sx={{ backgroundColor: '#1976d2' }}>
-                            <TableRow>
-                                {/* Название препарата */}
-                                <StyledTableCell
-                                    sx={{
-                                        color: '#ffffff',
-                                        fontWeight: 'bold',
-                                        width: '250px', // Фиксированная ширина
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                    }}
-                                >
-                                    <Tooltip title="Название препарата">
-                                        <span>
-                                            <TableSortLabel
-                                                active={orderBy === 'name'}
-                                                direction={orderBy === 'name' ? order : 'asc'}
-                                                onClick={() => handleSort('name')}
-                                                sx={{ color: '#ffffff' }}
-                                                hideSortIcon={false} // Всегда показывать иконку сортировки
-                                            >
-                                                Название
-                                            </TableSortLabel>
-                                        </span>
-                                    </Tooltip>
-                                </StyledTableCell>
 
-                                {/* Серийный номер */}
-                                <StyledTableCell
-                                    sx={{
-                                        color: '#ffffff',
-                                        fontWeight: 'bold',
-                                        width: '90px', // Уменьшенная фиксированная ширина
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        textAlign: 'center', // Центрирование содержимого
-                                    }}
-                                >
-                                    <Tooltip title="Уникальный серийный номер препарата">
-                                        <span>
-                                            <TableSortLabel
-                                                active={orderBy === 'serialNumber'}
-                                                direction={orderBy === 'serialNumber' ? order : 'asc'}
-                                                onClick={() => handleSort('serialNumber')}
-                                                sx={{ color: '#ffffff', justifyContent: 'center' }}
-                                                hideSortIcon={false}
-                                            >
-                                                Серийный Номер
-                                            </TableSortLabel>
-                                        </span>
-                                    </Tooltip>
-                                </StyledTableCell>
-
-                                {/* Срок годности */}
-                                <StyledTableCell
-                                    sx={{
-                                        color: '#ffffff',
-                                        fontWeight: 'bold',
-                                        width: '150px', // Уменьшенная фиксированная ширина
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                    }}
-                                >
-                                    <Tooltip title="Дата истечения срока годности препарата">
-                                        <span>
-                                            <TableSortLabel
-                                                active={orderBy === 'expirationDate'}
-                                                direction={orderBy === 'expirationDate' ? order : 'asc'}
-                                                onClick={() => handleSort('expirationDate')}
-                                                sx={{ color: '#ffffff' }}
-                                                hideSortIcon={false}
-                                            >
-                                                Срок Годности
-                                            </TableSortLabel>
-                                        </span>
-                                    </Tooltip>
-                                </StyledTableCell>
-
-                                {/* Дополнительный столбец для администраторов */}
-                                {isAdmin && (
+            <TableContainer
+                component={Paper}
+                sx={{
+                    overflowX: 'auto',
+                    position: 'relative',
+                    tableLayout: 'fixed', // Фиксированный макет таблицы
+                    border: '1px solid #ddd', // Внешняя граница таблицы
+                }}
+            >
+                {loading && (
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 1,
+                        }}
+                    >
+                        <CircularProgress />
+                    </Box>
+                )}
+                {error ? (
+                    <Alert severity="error" sx={{ m: 2 }}>
+                        {error}
+                    </Alert>
+                ) : (
+                    <>
+                        <Table>
+                            <TableHead sx={{ backgroundColor: '#1976d2' }}>
+                                <TableRow>
+                                    {isAdmin && (
+                                        <StyledTableCell
+                                            sx={{
+                                                color: '#fff',
+                                                fontWeight: 'bold',
+                                                width: '50px',
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            <Checkbox
+                                                size="small"
+                                                sx={{ color: 'white' }}
+                                                checked={selectedIds.length === medicines.length && medicines.length > 0}
+                                                onChange={handleSelectAll}
+                                            />
+                                        </StyledTableCell>
+                                    )}
+                                    {/* Название препарата */}
                                     <StyledTableCell
                                         sx={{
                                             color: '#ffffff',
                                             fontWeight: 'bold',
-                                            width: '100px', // Фиксированная ширина
+                                            width: '250px',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                         }}
                                     >
-                                        <Tooltip title="Действия">
-                                            <span>Действия</span>
+                                        <Tooltip title="Название препарата">
+                      <span>
+                        <TableSortLabel
+                            active={orderBy === 'name'}
+                            direction={orderBy === 'name' ? order : 'asc'}
+                            onClick={() => handleSort('name')}
+                            sx={{ color: '#ffffff' }}
+                            hideSortIcon={false}
+                        >
+                          Название
+                        </TableSortLabel>
+                      </span>
                                         </Tooltip>
                                     </StyledTableCell>
-                                )}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {medicines.length > 0 ? (
-                                medicines.map((medicine) => (
-                                    <StyledTableRow key={medicine.id}>
-                                        <StyledTableCell
-                                            sx={{
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                            }}
-                                        >
-                                            <Tooltip title={medicine.name} arrow>
-                                                <span>{medicine.name}</span>
-                                            </Tooltip>
-                                        </StyledTableCell>
-                                        <StyledTableCell
-                                            sx={{
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                textAlign: 'center', // Центрирование содержимого
-                                            }}
-                                        >
-                                            <Tooltip title={medicine.serialNumber} arrow>
-                                                <span>{medicine.serialNumber}</span>
-                                            </Tooltip>
-                                        </StyledTableCell>
-                                        <StyledTableCell
-                                            sx={{
-                                                backgroundColor: medicine.color, // Используем цвет из JSON
-                                                color: '#ffffff',
-                                                textAlign: 'center',
-                                                borderRadius: '4px',
-                                                fontWeight: 'bold',
-                                                cursor: 'default',
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                            }}
-                                        >
-                                            <Tooltip
-                                                title={`Срок истекает через ${getDaysRemaining(
-                                                    medicine.expirationDate
-                                                )} дней`}
-                                                arrow
-                                            >
-                                                <span>
-                                                    {format(
-                                                        parse(medicine.expirationDate, 'dd-MM-yyyy', new Date()),
-                                                        'dd MMM yyyy',
-                                                        { locale: ru }
-                                                    )}
-                                                </span>
-                                            </Tooltip>
-                                        </StyledTableCell>
-                                        {isAdmin && (
-                                            <StyledTableCell
-                                                sx={{
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    textAlign: 'center',
-                                                }}
-                                            >
-                                                <Tooltip title="Удалить" arrow>
-                                                    <IconButton
-                                                        aria-label="delete"
-                                                        color="error"
-                                                        onClick={() => handleDelete(medicine.id)}
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </StyledTableCell>
-                                        )}
-                                    </StyledTableRow>
-                                ))
-                            ) : (
-                                <StyledTableRow>
+
+                                    {/* Серийный номер */}
                                     <StyledTableCell
-                                        colSpan={isAdmin ? 4 : 3}
-                                        align="center"
-                                        sx={{ padding: '12px 16px' }}
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 'bold',
+                                            width: '90px',
+                                            whiteSpace: 'nowrap',
+                                            textAlign: 'center',
+                                        }}
                                     >
-                                        Нет данных
+                                        <Tooltip title="Уникальный серийный номер препарата">
+                      <span>
+                        <TableSortLabel
+                            active={orderBy === 'serialNumber'}
+                            direction={orderBy === 'serialNumber' ? order : 'asc'}
+                            onClick={() => handleSort('serialNumber')}
+                            sx={{ color: '#ffffff', justifyContent: 'center' }}
+                            hideSortIcon={false}
+                        >
+                          Серийный Номер
+                        </TableSortLabel>
+                      </span>
+                                        </Tooltip>
                                     </StyledTableCell>
-                                </StyledTableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                    {/* Пагинация */}
-                    <Stack spacing={2} alignItems="center" padding={2}>
-                        <Pagination
-                            count={totalPages}
-                            page={currentPage}
-                            onChange={handleChangePage}
-                            color="primary"
-                            variant="outlined"
-                            shape="rounded"
-                        />
-                    </Stack>
-                </>
-            )}
-        </TableContainer>
+
+                                    {/* Срок годности (с отображением цвета) */}
+                                    <StyledTableCell
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 'bold',
+                                            width: '150px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Tooltip title="Дата истечения срока годности препарата">
+                      <span>
+                        <TableSortLabel
+                            active={orderBy === 'expirationDate'}
+                            direction={orderBy === 'expirationDate' ? order : 'asc'}
+                            onClick={() => handleSort('expirationDate')}
+                            sx={{ color: '#ffffff' }}
+                            hideSortIcon={false}
+                        >
+                          Срок Годности
+                        </TableSortLabel>
+                      </span>
+                                        </Tooltip>
+                                    </StyledTableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {medicines.length > 0 ? (
+                                    medicines.map((medicine) => {
+                                        const isSelected = selectedIds.includes(medicine.id);
+                                        return (
+                                            <StyledTableRow key={medicine.id}>
+                                                {isAdmin && (
+                                                    <StyledTableCell
+                                                        sx={{
+                                                            width: '50px',
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Checkbox
+                                                            size="small"
+                                                            checked={isSelected}
+                                                            onChange={() => handleCheckboxChange(medicine.id)}
+                                                        />
+                                                    </StyledTableCell>
+                                                )}
+                                                {/* Название (кликаем для редактирования, если admin) */}
+                                                <StyledTableCell
+                                                    sx={{
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        cursor: isAdmin ? 'pointer' : 'default',
+                                                    }}
+                                                    onClick={() => isAdmin && handleOpenEditDialog(medicine)}
+                                                    title={
+                                                        isAdmin
+                                                            ? 'Нажмите, чтобы редактировать'
+                                                            : medicine.name
+                                                    }
+                                                >
+                                                    <Tooltip title={medicine.name} arrow>
+                                                        <span>{medicine.name}</span>
+                                                    </Tooltip>
+                                                </StyledTableCell>
+
+                                                {/* Серийный номер */}
+                                                <StyledTableCell
+                                                    sx={{
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        textAlign: 'center',
+                                                    }}
+                                                >
+                                                    <Tooltip title={medicine.serialNumber} arrow>
+                                                        <span>{medicine.serialNumber}</span>
+                                                    </Tooltip>
+                                                </StyledTableCell>
+
+                                                {/* Срок годности (с использованием цвета) */}
+                                                <StyledTableCell
+                                                    sx={{
+                                                        backgroundColor: medicine.color || 'transparent',
+                                                        color: medicine.color ? '#ffffff' : 'inherit',
+                                                        textAlign: 'center',
+                                                        borderRadius: medicine.color ? '4px' : 0,
+                                                        fontWeight: 'bold',
+                                                        cursor: 'default',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    }}
+                                                >
+                                                    <Tooltip
+                                                        title={`Срок истекает через ${getDaysRemaining(
+                                                            medicine.expirationDate
+                                                        )} дней`}
+                                                        arrow
+                                                    >
+                            <span>
+                              {format(
+                                  parse(
+                                      medicine.expirationDate,
+                                      'dd-MM-yyyy',
+                                      new Date()
+                                  ),
+                                  'dd MMM yyyy',
+                                  { locale: ru }
+                              )}
+                            </span>
+                                                    </Tooltip>
+                                                </StyledTableCell>
+                                            </StyledTableRow>
+                                        );
+                                    })
+                                ) : (
+                                    <StyledTableRow>
+                                        <StyledTableCell
+                                            colSpan={isAdmin ? 4 : 3}
+                                            align="center"
+                                            sx={{ padding: '12px 16px' }}
+                                        >
+                                            Нет данных
+                                        </StyledTableCell>
+                                    </StyledTableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+
+                        {/* Пагинация */}
+                        <Stack spacing={2} alignItems="center" padding={2}>
+                            <Pagination
+                                count={totalPages}
+                                page={currentPage}
+                                onChange={handleChangePage}
+                                color="primary"
+                                variant="outlined"
+                                shape="rounded"
+                            />
+                        </Stack>
+                    </>
+                )}
+            </TableContainer>
+
+            {/* Диалог: Добавление / Редактирование */}
+            <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+                <DialogTitle>
+                    {dialogMode === 'add' ? 'Добавить лекарство' : 'Редактировать лекарство'}
+                </DialogTitle>
+                <DialogContent dividers>
+                    {/* Поле Name */}
+                    <TextField
+                        label="Название"
+                        name="name"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formData.name}
+                        onChange={handleFormChange}
+                    />
+                    {/* Поле SerialNumber */}
+                    <TextField
+                        label="Серийный номер"
+                        name="serialNumber"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formData.serialNumber}
+                        onChange={handleFormChange}
+                    />
+                    {/* Поле ExpirationDate (формат 'dd-MM-yyyy') */}
+                    <TextField
+                        label="Срок годности (дд-ММ-гггг)"
+                        name="expirationDate"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formData.expirationDate}
+                        onChange={handleFormChange}
+                        placeholder="например: 25-12-2025"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    {/* Если режим edit, показываем кнопку удаления */}
+                    {dialogMode === 'edit' && (
+                        <Button color="error" onClick={handleDeleteFromDialog}>
+                            Удалить
+                        </Button>
+                    )}
+                    <Button onClick={handleCloseDialog}>Отмена</Button>
+                    <Button variant="contained" onClick={handleSubmit}>
+                        Сохранить
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 };
 

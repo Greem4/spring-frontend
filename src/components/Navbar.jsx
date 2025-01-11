@@ -1,4 +1,6 @@
+// Navbar.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
     AppBar,
     Toolbar,
@@ -8,24 +10,32 @@ import {
     IconButton,
     Menu,
     MenuItem,
+    Tooltip
 } from '@mui/material';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { Link } from 'react-router-dom';
-import LoginDialog from './LoginDialog';
-import RegisterDialog from './RegisterDialog';
+import AuthDialog from './AuthDialog';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
-    const [openLogin, setOpenLogin] = useState(false);
-    const [openRegister, setOpenRegister] = useState(false);
+    const [openAuth, setOpenAuth] = useState(false);
     const [anchorElUser, setAnchorElUser] = useState(null);
 
-    const handleLoginOpen = () => setOpenLogin(true);
-    const handleLoginClose = () => setOpenLogin(false);
-    const handleRegisterOpen = () => setOpenRegister(true);
-    const handleRegisterClose = () => setOpenRegister(false);
+    const handleAuthOpen = () => setOpenAuth(true);
+    const handleAuthClose = () => setOpenAuth(false);
 
     const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
     const handleCloseUserMenu = () => setAnchorElUser(null);
+
+    const handleSendEmail = async () => {
+        try {
+            await axios.post('http://localhost:8080/api/v1/admin/users/notification');
+            alert('Письмо успешно отправлено!');
+        } catch (err) {
+            console.error('Ошибка при отправке письма:', err);
+            alert('Ошибка при отправке письма');
+        }
+    };
 
     return (
         <>
@@ -35,21 +45,28 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                         Medicine Manager
                     </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        {isAuthenticated && user.role === 'ADMIN' && (
+                            <Tooltip title="Отправить email-уведомление">
+                                <Button
+                                    color="inherit"
+                                    startIcon={<MailOutlineIcon />}
+                                    onClick={handleSendEmail}
+                                    sx={{ textTransform: 'none' }}
+                                >
+                                    Уведомить
+                                </Button>
+                            </Tooltip>
+                        )}
                         <Button color="inherit" component={Link} to="/medicines">
                             Лекарства
                         </Button>
                     </Box>
 
                     {!isAuthenticated ? (
-                        <>
-                            <Button color="inherit" onClick={handleLoginOpen}>
-                                Вход
-                            </Button>
-                            <Button color="inherit" onClick={handleRegisterOpen}>
-                                Регистрация
-                            </Button>
-                        </>
+                        <Button color="inherit" onClick={handleAuthOpen}>
+                            Вход
+                        </Button>
                     ) : (
                         <>
                             <IconButton
@@ -98,8 +115,7 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                 </Toolbar>
             </AppBar>
 
-            <LoginDialog open={openLogin} handleClose={handleLoginClose} setAuth={setAuth} />
-            <RegisterDialog open={openRegister} handleClose={handleRegisterClose} setAuth={setAuth} />
+            <AuthDialog open={openAuth} handleClose={handleAuthClose} setAuth={setAuth} />
         </>
     );
 };
