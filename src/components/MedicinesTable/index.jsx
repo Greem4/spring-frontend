@@ -29,7 +29,7 @@ import {
     updateMedicine,
     deleteMedicine,
     deleteMultipleMedicines,
-} from '../../services/api';
+} from '/services/api';
 
 /**
  * Основной компонент, который отображает таблицу лекарств,
