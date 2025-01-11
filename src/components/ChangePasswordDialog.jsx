@@ -17,6 +17,8 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
 
+const BASE_API = import.meta.env.VITE_API_URL;
+
 const ChangePasswordDialog = ({ open, handleClose, username }) => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -39,7 +41,7 @@ const ChangePasswordDialog = ({ open, handleClose, username }) => {
             return;
         }
         try {
-            await axios.put('http://localhost:8080/api/v1/users/changePassword', {
+            await axios.put(`${BASE_API}/users/changePassword`, {
                 username,
                 oldPassword,
                 newPassword,

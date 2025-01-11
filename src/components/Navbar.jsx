@@ -18,6 +18,8 @@ import { Link } from 'react-router-dom';
 import AuthDialog from './AuthDialog';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
+    const BASE_API = import.meta.env.VITE_API_URL;
+
     const [openAuth, setOpenAuth] = useState(false);
     const [anchorElUser, setAnchorElUser] = useState(null);
 
@@ -29,7 +31,7 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
 
     const handleSendEmail = async () => {
         try {
-            await axios.post('http://localhost:8080/api/v1/admin/users/notification');
+            await axios.post(`${BASE_API}/admin/users/notification`);
             alert('Письмо успешно отправлено!');
         } catch (err) {
             console.error('Ошибка при отправке письма:', err);

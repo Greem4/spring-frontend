@@ -10,11 +10,13 @@ import { AuthContext } from './AuthContext';
 import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
 
 function App() {
+    const BASE_API = import.meta.env.VITE_API_URL;
+
     const { auth, setAuth } = useContext(AuthContext);
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8080/api/v1/auth/logout');
+            await axios.post(`${BASE_API}/auth/logout`);
             setAuth({
                 isAuthenticated: false,
                 user: null,

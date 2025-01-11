@@ -16,6 +16,8 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
 
 const RegisterForm = ({ setAuth, onSuccess }) => {
+    const BASE_API = import.meta.env.VITE_API_URL;
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,12 +40,12 @@ const RegisterForm = ({ setAuth, onSuccess }) => {
         }
 
         try {
-            await axios.post('http://localhost:8080/api/v1/auth/register', {
+            await axios.post(`${BASE_API}/auth/register`, {
                 username,
                 password
             }, { withCredentials: true });
 
-            const loginResponse = await axios.post('http://localhost:8080/api/v1/auth/login', {
+            const loginResponse = await axios.post(`${BASE_API}/auth/login`, {
                 username,
                 password
             }, { withCredentials: true });

@@ -1,4 +1,3 @@
-// components/MedicinesTable/MedicineDialog.jsx
 import React, { memo, useCallback, useEffect, useState } from 'react';
 import {
     Dialog,
@@ -6,19 +5,20 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    Button
+    Button,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';
 
+
 function MedicineDialog({
                             open,
                             onClose,
-                            dialogMode,      // "add" или "edit"
-                            initialData,     // начальные данные при "редактировании"
-                            onSave,          // колбэк для сохранения (create/update)
-                            onDelete,        // колбэк для удаления (в режиме edit)
+                            dialogMode,
+                            initialData,
+                            onSave,
+                            onDelete,
                         }) {
     const [formData, setFormData] = useState({
         id: '',
@@ -50,13 +50,24 @@ function MedicineDialog({
         setFormData((prev) => ({ ...prev, [name]: value }));
     }, []);
 
-    const handleSubmit = useCallback(() => {
-        const dataToSave = { ...formData };
-        if (dataToSave.expirationDate) {
-            dataToSave.expirationDate = format(dataToSave.expirationDate, 'dd-MM-yyyy');
-        }
-        onSave(dataToSave);
-    }, [onSave, formData]);
+    const handleSubmit = useCallback(
+        (e) => {
+            // Если событие пришло из формы (submit), нужно отменить перезагрузку страницы
+            if (e && e.preventDefault) {
+                e.preventDefault();
+            }
+
+            const dataToSave = { ...formData };
+            if (dataToSave.expirationDate) {
+                dataToSave.expirationDate = format(
+                    dataToSave.expirationDate,
+                    'dd-MM-yyyy'
+                );
+            }
+            onSave(dataToSave);
+        },
+        [onSave, formData]
+    );
 
     const handleDelete = useCallback(() => {
         if (onDelete) {
@@ -69,54 +80,66 @@ function MedicineDialog({
             <DialogTitle>
                 {dialogMode === 'add' ? 'Добавить лекарство' : 'Редактировать лекарство'}
             </DialogTitle>
-            <DialogContent dividers>
-                <TextField
-                    label="Название"
-                    name="name"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                />
-                <TextField
-                    label="Серийный номер"
-                    name="serialNumber"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={formData.serialNumber}
-                    onChange={handleFormChange}
-                />
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DatePicker
-                        label="Срок годности"
-                        value={formData.expirationDate}
-                        onChange={(newValue) =>
-                            setFormData((prev) => ({ ...prev, expirationDate: newValue }))
-                        }
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                fullWidth
-                                margin="normal"
-                                helperText={null}
-                            />
-                        )}
+
+            {/*
+         Превращаем блок в форму с onSubmit
+         Тогда по Enter в любом поле, в том числе поле даты, сработает handleSubmit
+      */}
+            <form onSubmit={handleSubmit}>
+                <DialogContent dividers>
+                    <TextField
+                        label="Название"
+                        name="name"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formData.name}
+                        onChange={handleFormChange}
                     />
-                </LocalizationProvider>
-            </DialogContent>
-            <DialogActions>
-                {dialogMode === 'edit' && (
-                    <Button color="error" onClick={handleDelete}>
-                        Удалить
+                    <TextField
+                        label="Серийный номер"
+                        name="serialNumber"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formData.serialNumber}
+                        onChange={handleFormChange}
+                    />
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                            label="Срок годности"
+                            value={formData.expirationDate}
+                            onChange={(newValue) =>
+                                setFormData((prev) => ({ ...prev, expirationDate: newValue }))
+                            }
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    fullWidth
+                                    margin="normal"
+                                    helperText={null}
+                                />
+                            )}
+                        />
+                    </LocalizationProvider>
+                </DialogContent>
+
+                <DialogActions>
+                    {dialogMode === 'edit' && (
+                        <Button color="error" onClick={handleDelete}>
+                            Удалить
+                        </Button>
+                    )}
+                    <Button onClick={onClose}>Отмена</Button>
+                    {/*
+            Делаем кнопку сохранения сабмитом формы:
+            теперь по Enter в любом поле форма отправится
+          */}
+                    <Button type="submit" variant="contained">
+                        Сохранить
                     </Button>
-                )}
-                <Button onClick={onClose}>Отмена</Button>
-                <Button variant="contained" onClick={handleSubmit}>
-                    Сохранить
-                </Button>
-            </DialogActions>
+                </DialogActions>
+            </form>
         </Dialog>
     );
 }

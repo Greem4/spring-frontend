@@ -24,6 +24,9 @@ const LoginForm = ({ setAuth, onSuccess }) => {
     const [authError, setAuthError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
 
+    const BASE_API = import.meta.env.VITE_API_URL;
+    const YANDEX_API = import.meta.env.VITE_YANDEX_AUTH;
+
     const handleTogglePasswordVisibility = () => {
         setShowPassword(prev => !prev);
     };
@@ -35,7 +38,7 @@ const LoginForm = ({ setAuth, onSuccess }) => {
         }
 
         try {
-            const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
+            const response = await axios.post(`${BASE_API}/auth/login`, {
                 username,
                 password,
             });
@@ -49,7 +52,7 @@ const LoginForm = ({ setAuth, onSuccess }) => {
                 throw new Error('Токен не получен');
             }
 
-            const profileResponse = await axios.get('http://localhost:8080/api/v1/users/profile', {
+            const profileResponse = await axios.get(`${BASE_API}/users/profile`, {
                 withCredentials: true,
             });
 
@@ -71,7 +74,7 @@ const LoginForm = ({ setAuth, onSuccess }) => {
     };
 
     const handleYandexLogin = () => {
-        window.location.href = 'http://localhost:8080/oauth2/authorization/yandex';
+        window.location.href = `${YANDEX_API}`;
     };
 
     return (

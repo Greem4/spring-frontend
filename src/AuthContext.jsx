@@ -5,6 +5,8 @@ import axios from 'axios';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const BASE_API = import.meta.env.VITE_API_URL;
+
     const [auth, setAuth] = useState({
         isAuthenticated: false,
         user: null,
@@ -17,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
             const fetchProfile = async () => {
                 try {
-                    const response = await axios.get('http://localhost:8080/api/v1/users/profile');
+                    const response = await axios.get(`${BASE_API}/users/profile`);
                     setAuth({
                         isAuthenticated: true,
                         user: response.data,
@@ -35,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8080/api/v1/auth/logout');
+            await axios.post(`${BASE_API}/auth/logout`);
             setAuth({
                 isAuthenticated: false,
                 user: null,

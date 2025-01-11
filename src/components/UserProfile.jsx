@@ -5,13 +5,15 @@ import ChangePasswordDialog from './ChangePasswordDialog';
 import axios from 'axios';
 
 const UserProfile = () => {
+    const BASE_API = import.meta.env.VITE_API_URL;
+
     const { auth, setAuth } = useContext(AuthContext);
     const [openChangePassword, setOpenChangePassword] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/api/v1/users/profile');
+                const response = await axios.get(`${BASE_API}/users/profile`);
                 setAuth(prev => ({ ...prev, user: response.data }));
             } catch (err) {
                 console.error('Ошибка при получении профиля:', err);
