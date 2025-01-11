@@ -10,7 +10,8 @@ import {
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';
-
+// Опционально, если хотите локаль (русские названия месяцев, дней)
+import { ru } from 'date-fns/locale';
 
 function MedicineDialog({
                             open,
@@ -52,16 +53,17 @@ function MedicineDialog({
 
     const handleSubmit = useCallback(
         (e) => {
-            // Если событие пришло из формы (submit), нужно отменить перезагрузку страницы
-            if (e && e.preventDefault) {
+            // Предотвращаем перезагрузку при отправке формы
+            if (e?.preventDefault) {
                 e.preventDefault();
             }
 
             const dataToSave = { ...formData };
             if (dataToSave.expirationDate) {
+                // Сохраняем строку в формате "DD/MM/YYYY"
                 dataToSave.expirationDate = format(
                     dataToSave.expirationDate,
-                    'dd-MM-yyyy'
+                    'dd/MM/yyyy'
                 );
             }
             onSave(dataToSave);
@@ -81,10 +83,6 @@ function MedicineDialog({
                 {dialogMode === 'add' ? 'Добавить лекарство' : 'Редактировать лекарство'}
             </DialogTitle>
 
-            {/*
-         Превращаем блок в форму с onSubmit
-         Тогда по Enter в любом поле, в том числе поле даты, сработает handleSubmit
-      */}
             <form onSubmit={handleSubmit}>
                 <DialogContent dividers>
                     <TextField
@@ -105,13 +103,20 @@ function MedicineDialog({
                         value={formData.serialNumber}
                         onChange={handleFormChange}
                     />
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+
+                    <LocalizationProvider
+                        dateAdapter={AdapterDateFns}
+                        // Если хотите русскую локализацию, раскомментируйте строку ниже + импорт { ru } из 'date-fns/locale'
+                        adapterLocale={ru}
+                    >
                         <DatePicker
                             label="Срок годности"
                             value={formData.expirationDate}
                             onChange={(newValue) =>
                                 setFormData((prev) => ({ ...prev, expirationDate: newValue }))
                             }
+                            // Формат отображения и ввода: "DD/MM/YYYY"
+                            inputFormat="dd/MM/yyyy"
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -131,10 +136,6 @@ function MedicineDialog({
                         </Button>
                     )}
                     <Button onClick={onClose}>Отмена</Button>
-                    {/*
-            Делаем кнопку сохранения сабмитом формы:
-            теперь по Enter в любом поле форма отправится
-          */}
                     <Button type="submit" variant="contained">
                         Сохранить
                     </Button>
