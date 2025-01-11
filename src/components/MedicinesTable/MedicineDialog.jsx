@@ -6,8 +6,11 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    Button,
+    Button
 } from '@mui/material';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format } from 'date-fns';
 
 function MedicineDialog({
                             open,
@@ -21,36 +24,40 @@ function MedicineDialog({
         id: '',
         name: '',
         serialNumber: '',
-        expirationDate: '',
+        expirationDate: null,
     });
 
-    // При открытии диалога в режиме "edit" заполняем поля
     useEffect(() => {
         if (open && initialData) {
-            setFormData(initialData);
+            setFormData({
+                ...initialData,
+                expirationDate: initialData.expirationDate
+                    ? new Date(initialData.expirationDate)
+                    : null,
+            });
         } else if (open && dialogMode === 'add') {
-            // Сбрасываем в пустые поля
             setFormData({
                 id: '',
                 name: '',
                 serialNumber: '',
-                expirationDate: '',
+                expirationDate: null,
             });
         }
     }, [open, dialogMode, initialData]);
 
-    // Обработчик изменения полей
     const handleFormChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     }, []);
 
-    // Нажатие "Сохранить"
     const handleSubmit = useCallback(() => {
-        onSave(formData);
+        const dataToSave = { ...formData };
+        if (dataToSave.expirationDate) {
+            dataToSave.expirationDate = format(dataToSave.expirationDate, 'dd-MM-yyyy');
+        }
+        onSave(dataToSave);
     }, [onSave, formData]);
 
-    // Нажатие "Удалить" (только в режиме edit)
     const handleDelete = useCallback(() => {
         if (onDelete) {
             onDelete(formData.id);
@@ -81,16 +88,23 @@ function MedicineDialog({
                     value={formData.serialNumber}
                     onChange={handleFormChange}
                 />
-                <TextField
-                    label="Срок годности (дд-ММ-гггг)"
-                    name="expirationDate"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={formData.expirationDate}
-                    onChange={handleFormChange}
-                    placeholder="например: 25-12-2025"
-                />
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                        label="Срок годности"
+                        value={formData.expirationDate}
+                        onChange={(newValue) =>
+                            setFormData((prev) => ({ ...prev, expirationDate: newValue }))
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                fullWidth
+                                margin="normal"
+                                helperText={null}
+                            />
+                        )}
+                    />
+                </LocalizationProvider>
             </DialogContent>
             <DialogActions>
                 {dialogMode === 'edit' && (
