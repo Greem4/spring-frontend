@@ -9,8 +9,7 @@ import {
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format } from 'date-fns';
-// Опционально, если хотите локаль (русские названия месяцев, дней)
+import { format, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 function MedicineDialog({
@@ -30,11 +29,20 @@ function MedicineDialog({
 
     useEffect(() => {
         if (open && initialData) {
+            let dateValue = null;
+            if (initialData.expirationDate) {
+                // Сервер может вернуть дату в виде "DD-MM-YYYY" или "DD/MM/YYYY".
+                // Проверяем, есть ли дефис: парсим как "dd-MM-yyyy", иначе — "dd/MM/yyyy".
+                if (initialData.expirationDate.includes('-')) {
+                    dateValue = parse(initialData.expirationDate, 'dd-MM-yyyy', new Date());
+                } else {
+                    dateValue = parse(initialData.expirationDate, 'dd/MM/yyyy', new Date());
+                }
+            }
+
             setFormData({
                 ...initialData,
-                expirationDate: initialData.expirationDate
-                    ? new Date(initialData.expirationDate)
-                    : null,
+                expirationDate: dateValue,
             });
         } else if (open && dialogMode === 'add') {
             setFormData({
@@ -53,18 +61,14 @@ function MedicineDialog({
 
     const handleSubmit = useCallback(
         (e) => {
-            // Предотвращаем перезагрузку при отправке формы
             if (e?.preventDefault) {
                 e.preventDefault();
             }
-
             const dataToSave = { ...formData };
+
+            // Сохраняем дату всегда в виде "DD/MM/YYYY"
             if (dataToSave.expirationDate) {
-                // Сохраняем строку в формате "DD/MM/YYYY"
-                dataToSave.expirationDate = format(
-                    dataToSave.expirationDate,
-                    'dd/MM/yyyy'
-                );
+                dataToSave.expirationDate = format(dataToSave.expirationDate, 'dd/MM/yyyy');
             }
             onSave(dataToSave);
         },
@@ -104,18 +108,14 @@ function MedicineDialog({
                         onChange={handleFormChange}
                     />
 
-                    <LocalizationProvider
-                        dateAdapter={AdapterDateFns}
-                        // Если хотите русскую локализацию, раскомментируйте строку ниже + импорт { ru } из 'date-fns/locale'
-                        adapterLocale={ru}
-                    >
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ru}>
                         <DatePicker
                             label="Срок годности"
                             value={formData.expirationDate}
                             onChange={(newValue) =>
                                 setFormData((prev) => ({ ...prev, expirationDate: newValue }))
                             }
-                            // Формат отображения и ввода: "DD/MM/YYYY"
+                            // Отображаем и вводим дату через "DD/MM/YYYY"
                             inputFormat="dd/MM/yyyy"
                             renderInput={(params) => (
                                 <TextField
