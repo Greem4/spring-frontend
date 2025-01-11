@@ -17,6 +17,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
 import { AuthContext } from '../AuthContext';
+import YandexIcon from '../assets/yandex-icon.svg'; // Убедитесь, что этот путь корректен
 
 const LoginDialog = ({ open, handleClose }) => {
     const { setAuth } = useContext(AuthContext);
@@ -119,8 +120,21 @@ const LoginDialog = ({ open, handleClose }) => {
             <DialogActions sx={{ justifyContent: 'space-between' }}>
                 <Button onClick={handleClose}>Отмена</Button>
                 <div>
-                    <Button onClick={handleYandexLogin} sx={{ mr: 1 }}>
-                        Войти через Яндекс
+                    <Button
+                        onClick={handleYandexLogin}
+                        sx={{
+                            backgroundColor: '#0a0a0a',
+                            color: '#ebeaea',
+                            mr: 1,
+                            '&:hover': {
+                                backgroundColor: '#080808',
+                            },
+                        }}
+                        startIcon={
+                            <img src={YandexIcon  } alt="Yandex" style={{ width: 35, height: 24 }} />
+                        }
+                    >
+                          Войти с Яндекс ID
                     </Button>
                     <Button onClick={handleLogin} variant="contained">
                         Войти
