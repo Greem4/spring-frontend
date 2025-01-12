@@ -16,8 +16,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import UserInfoDialog from './UserInfoDialog';
-
-const BASE_API = import.meta.env.VITE_API_URL;
+import { API_URL } from '../config';
 
 const AdminMenu = () => {
     const { auth } = useContext(AuthContext);
@@ -36,7 +35,7 @@ const AdminMenu = () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await axios.get(`${BASE_API}/admin/users`);
+                const response = await axios.get(`${API_URL}/admin/users`);
                 const usersData = response.data._embedded?.userResponseList || [];
                 setUsers(usersData);
             } catch (err) {
@@ -61,7 +60,7 @@ const AdminMenu = () => {
 
     const handleDeleteUser = async (id) => {
         try {
-            await axios.delete(`${BASE_API}/admin/users/${id}`);
+            await axios.delete(`${API_URL}/admin/users/${id}`);
             setUsers((prev) => prev.filter((user) => user.id !== id));
             handleCloseDialog();
         } catch (err) {
@@ -75,7 +74,7 @@ const AdminMenu = () => {
         if (!user) return;
         try {
             const action = user.enabled ? 'DISABLE' : 'ENABLE';
-            const response = await axios.put(`${BASE_API}/admin/users/${user.username}/${action}`);
+            const response = await axios.put(`${API_URL}/admin/users/${user.username}/${action}`);
             const updatedUser = response.data;
             setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
             if (selectedUser && selectedUser.id === id) {
@@ -92,7 +91,7 @@ const AdminMenu = () => {
         if (!user) return;
         try {
             const payload = { username: user.username, role: newRole };
-            await axios.put(`${BASE_API}/admin/users/role`, payload);
+            await axios.put(`${API_URL}/admin/users/role`, payload);
             setUsers(prev => {
                 const updated = prev.map(u => u.id === id ? { ...u, role: newRole } : u);
                 if (selectedUser && selectedUser.id === id) {

@@ -3,9 +3,9 @@ import { Typography, Paper, Box, Chip, Button } from '@mui/material';
 import { AuthContext } from '../AuthContext';
 import ChangePasswordDialog from './ChangePasswordDialog';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const UserProfile = () => {
-    const BASE_API = import.meta.env.VITE_API_URL;
 
     const { auth, setAuth } = useContext(AuthContext);
     const [openChangePassword, setOpenChangePassword] = useState(false);
@@ -13,7 +13,7 @@ const UserProfile = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await axios.get(`${BASE_API}/users/profile`);
+                const response = await axios.get(`${API_URL}/users/profile`);
                 setAuth(prev => ({ ...prev, user: response.data }));
             } catch (err) {
                 console.error('Ошибка при получении профиля:', err);
