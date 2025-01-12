@@ -8,15 +8,15 @@ import UserProfile from './components/UserProfile';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
+import { API_URL } from './config';
 
 function App() {
-    const BASE_API = import.meta.env.VITE_API_URL;
 
     const { auth, setAuth } = useContext(AuthContext);
 
     const handleLogout = async () => {
         try {
-            await axios.post(`${BASE_API}/auth/logout`);
+            await axios.post(`${API_URL}/auth/logout`);
             setAuth({
                 isAuthenticated: false,
                 user: null,

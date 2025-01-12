@@ -16,9 +16,9 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { Link } from 'react-router-dom';
 import AuthDialog from './AuthDialog';
+import { API_URL } from '../config';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
-    const BASE_API = import.meta.env.VITE_API_URL;
 
     const [openAuth, setOpenAuth] = useState(false);
     const [anchorElUser, setAnchorElUser] = useState(null);
@@ -31,7 +31,7 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
 
     const handleSendEmail = async () => {
         try {
-            await axios.post(`${BASE_API}/admin/users/notification`);
+            await axios.post(`${API_URL}/admin/users/notification`);
             alert('Письмо успешно отправлено!');
         } catch (err) {
             console.error('Ошибка при отправке письма:', err);
