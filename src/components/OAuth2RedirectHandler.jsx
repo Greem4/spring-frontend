@@ -1,13 +1,13 @@
-import React, { useEffect, useContext } from 'react';
+import React, {useEffect, useContext} from 'react';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../AuthContext';
+import {jwtDecode} from 'jwt-decode';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {AuthContext} from '../AuthContext';
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { setAuth } = useContext(AuthContext);
+    const {setAuth} = useContext(AuthContext);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -34,7 +34,7 @@ const OAuth2RedirectHandler = () => {
             }
 
             // Обновляем контекст аутентификации
-            setAuth({ isAuthenticated: true, user: userData });
+            setAuth({isAuthenticated: true, user: userData});
 
             // Перенаправляем пользователя на страницу со списком лекарств
             navigate('/medicines');
