@@ -1,11 +1,10 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from './config';
 
 export const AuthContext = createContext();
-
 export const AuthProvider = ({ children }) => {
-    const BASE_API = import.meta.env.VITE_API_URL;
 
     const [auth, setAuth] = useState({
         isAuthenticated: false,
@@ -19,7 +18,7 @@ export const AuthProvider = ({ children }) => {
 
             const fetchProfile = async () => {
                 try {
-                    const response = await axios.get(`${BASE_API}/users/profile`);
+                    const response = await axios.get(`${API_URL}/users/profile`);
                     setAuth({
                         isAuthenticated: true,
                         user: response.data,
@@ -37,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogout = async () => {
         try {
-            await axios.post(`${BASE_API}/auth/logout`);
+            await axios.post(`${API_URL}/auth/logout`);
             setAuth({
                 isAuthenticated: false,
                 user: null,

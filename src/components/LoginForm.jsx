@@ -1,5 +1,5 @@
 // LoginForm.jsx
-import React, { useState, useContext } from 'react';
+import React, {useState, useContext} from 'react';
 import {
     Box,
     Alert,
@@ -14,18 +14,18 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
-import { AuthContext } from '../AuthContext';
+import {AuthContext} from '../AuthContext';
 import YandexIcon from '../assets/yandex-icon.svg';
+import {API_URL} from '../config';
+import {YANDEX_AUTH_URL} from '../config';
 
-const LoginForm = ({ setAuth, onSuccess }) => {
-    const { setAuth: setContextAuth } = useContext(AuthContext);
+const LoginForm = ({setAuth, onSuccess}) => {
+    const {setAuth: setContextAuth} = useContext(AuthContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState(null);
-    const [showPassword, setShowPassword] = useState(false);
 
-    const BASE_API = import.meta.env.VITE_API_URL;
-    const YANDEX_API = import.meta.env.VITE_YANDEX_AUTH;
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleTogglePasswordVisibility = () => {
         setShowPassword(prev => !prev);
@@ -38,12 +38,12 @@ const LoginForm = ({ setAuth, onSuccess }) => {
         }
 
         try {
-            const response = await axios.post(`${BASE_API}/auth/login`, {
+            const response = await axios.post(`${API_URL}/auth/login`, {
                 username,
                 password,
             });
 
-            const { token, type } = response.data;
+            const {token, type} = response.data;
             if (token && type) {
                 const authToken = `${type} ${token}`;
                 localStorage.setItem('authToken', authToken);
@@ -52,7 +52,7 @@ const LoginForm = ({ setAuth, onSuccess }) => {
                 throw new Error('Токен не получен');
             }
 
-            const profileResponse = await axios.get(`${BASE_API}/users/profile`, {
+            const profileResponse = await axios.get(`${API_URL}/users/profile`, {
                 withCredentials: true,
             });
 
@@ -74,12 +74,13 @@ const LoginForm = ({ setAuth, onSuccess }) => {
     };
 
     const handleYandexLogin = () => {
-        window.location.href = `${YANDEX_API}`;
+        window.location.href = `${YANDEX_AUTH_URL}`;
     };
 
     return (
         <>
-            {authError && <Alert severity="error" sx={{ mb: 2 }}>{authError}</Alert>}
+            {authError &&
+                <Alert severity="error" sx={{mb: 2}}>{authError}</Alert>}
             <TextField
                 autoFocus
                 margin="dense"
@@ -90,7 +91,7 @@ const LoginForm = ({ setAuth, onSuccess }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
             />
-            <FormControl variant="outlined" fullWidth sx={{ mt: 2 }}>
+            <FormControl variant="outlined" fullWidth sx={{mt: 2}}>
                 <InputLabel htmlFor="login-password">Пароль</InputLabel>
                 <OutlinedInput
                     id="login-password"
@@ -105,13 +106,14 @@ const LoginForm = ({ setAuth, onSuccess }) => {
                                 onClick={handleTogglePasswordVisibility}
                                 edge="end"
                             >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                {showPassword ? <VisibilityOff/> :
+                                    <Visibility/>}
                             </IconButton>
                         </InputAdornment>
                     }
                 />
             </FormControl>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+            <Box sx={{display: 'flex', justifyContent: 'space-between', mt: 2}}>
                 <Button
                     onClick={handleYandexLogin}
                     sx={{
@@ -123,7 +125,8 @@ const LoginForm = ({ setAuth, onSuccess }) => {
                         },
                     }}
                     startIcon={
-                        <img src={YandexIcon} alt="Yandex" style={{ width: 35, height: 24 }} />
+                        <img src={YandexIcon} alt="Yandex"
+                             style={{width: 35, height: 24}}/>
                     }
                 >
                     Войти с Яндекс ID

@@ -1,8 +1,8 @@
 // services/api.js
 import axios from 'axios';
+import { API_URL } from '../src/config/index';
 
-const BASE_API = import.meta.env.VITE_API_URL;
-const BASE_URL = `${BASE_API}/medicines`;
+const BASE_URL = `${API_URL}/medicines`;
 
 // Если ваш токен хранится в localStorage:
 function getAuthHeaders() {
