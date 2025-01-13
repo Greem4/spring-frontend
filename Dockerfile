@@ -1,4 +1,4 @@
-FROM node:18-alpine as build
+FROM node:20-alpine as build
 LABEL authors="greem4"
 
 ARG VITE_API_URL
@@ -15,7 +15,6 @@ RUN npm ci && npm cache clean --force
 
 COPY . .
 RUN npm run build
-
 
 FROM nginx:stable-alpine
 LABEL authors="greem4"
