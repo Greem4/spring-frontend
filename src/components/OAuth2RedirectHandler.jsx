@@ -1,13 +1,15 @@
-import React, {useEffect, useContext} from 'react';
+// OAuth2RedirectHandler.jsx
+import React, { useEffect, useContext } from 'react';
 import axios from 'axios';
-import {jwtDecode} from 'jwt-decode';
-import {useLocation, useNavigate} from 'react-router-dom';
-import {AuthContext} from '../AuthContext';
+// Импортируем весь модуль jwt-decode и будем использовать его свойство default
+import * as jwtDecodeModule from 'jwt-decode';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../AuthContext';
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const {setAuth} = useContext(AuthContext);
+    const { setAuth } = useContext(AuthContext);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -22,7 +24,8 @@ const OAuth2RedirectHandler = () => {
             // Декодируем JWT для извлечения информации о пользователе и ролях
             let userData = {};
             try {
-                const decoded = jwtDecode(token);
+                // Используем jwtDecodeModule.default для декодирования токена
+                const decoded = jwtDecodeModule.default(token);
                 // Предполагается, что в JWT есть поля sub и role
                 userData = {
                     username: decoded.sub,
@@ -34,7 +37,7 @@ const OAuth2RedirectHandler = () => {
             }
 
             // Обновляем контекст аутентификации
-            setAuth({isAuthenticated: true, user: userData});
+            setAuth({ isAuthenticated: true, user: userData });
 
             // Перенаправляем пользователя на страницу со списком лекарств
             navigate('/medicines');

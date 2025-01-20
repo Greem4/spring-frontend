@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Container } from '@mui/material';
@@ -11,7 +12,6 @@ import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
 import { API_URL } from './config';
 
 function App() {
-
     const { auth, setAuth } = useContext(AuthContext);
 
     const handleLogout = async () => {
