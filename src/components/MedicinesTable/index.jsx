@@ -176,14 +176,6 @@ function MedicinesTable({ showAdminUI, canEdit }) {
         [fetchMedicinesData]
     );
 
-    if (loading) {
-        return <CircularProgress />;
-    }
-
-    if (error) {
-        return <Alert severity="error">{error}</Alert>;
-    }
-
     return (
         <Box sx={{ position: 'relative' }}>
             {showAdminUI && (
@@ -268,6 +260,7 @@ function MedicinesTable({ showAdminUI, canEdit }) {
                                             />
                                         </StyledTableCell>
                                     )}
+                                    {/* Название */}
                                     <StyledTableCell
                                         sx={{
                                             color: '#ffffff',
@@ -292,7 +285,58 @@ function MedicinesTable({ showAdminUI, canEdit }) {
                       </span>
                                         </Tooltip>
                                     </StyledTableCell>
-                                    {/* Добавьте остальные заголовки столбцов по аналогии */}
+
+                                    {/* Серийный номер */}
+                                    <StyledTableCell
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 'bold',
+                                            width: '90px',
+                                            whiteSpace: 'nowrap',
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Tooltip title="Уникальный серийный номер препарата">
+                      <span>
+                        <TableSortLabel
+                            active={orderBy === 'serialNumber'}
+                            direction={orderBy === 'serialNumber' ? order : 'asc'}
+                            onClick={() => handleSort('serialNumber')}
+                            sx={{ color: '#ffffff', justifyContent: 'center' }}
+                            hideSortIcon={false}
+                        >
+                          Серийный Номер
+                        </TableSortLabel>
+                      </span>
+                                        </Tooltip>
+                                    </StyledTableCell>
+
+                                    {/* Срок годности */}
+                                    <StyledTableCell
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 'bold',
+                                            width: '150px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Tooltip title="Дата истечения срока годности препарата">
+                      <span>
+                        <TableSortLabel
+                            active={orderBy === 'expirationDate'}
+                            direction={orderBy === 'expirationDate' ? order : 'asc'}
+                            onClick={() => handleSort('expirationDate')}
+                            sx={{ color: '#ffffff' }}
+                            hideSortIcon={false}
+                        >
+                          Срок Годности
+                        </TableSortLabel>
+                      </span>
+                                        </Tooltip>
+                                    </StyledTableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
