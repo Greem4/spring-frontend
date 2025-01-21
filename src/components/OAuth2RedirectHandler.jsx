@@ -1,13 +1,14 @@
-import React, {useEffect, useContext} from 'react';
+// components/OAuth2RedirectHandler.jsx
+import React, { useEffect, useContext } from 'react';
 import axios from 'axios';
 import {jwtDecode} from 'jwt-decode';
-import {useLocation, useNavigate} from 'react-router-dom';
-import {AuthContext} from '../AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../AuthContext';
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const {setAuth} = useContext(AuthContext);
+    const { setAuth } = useContext(AuthContext);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -15,28 +16,30 @@ const OAuth2RedirectHandler = () => {
 
         if (token) {
             const authToken = `Bearer ${token}`;
-            // Сохраняем токен и устанавливаем заголовок для axios
             localStorage.setItem('authToken', authToken);
             axios.defaults.headers.common['Authorization'] = authToken;
 
-            // Декодируем JWT для извлечения информации о пользователе и ролях
             let userData = {};
             try {
                 const decoded = jwtDecode(token);
-                // Предполагается, что в JWT есть поля sub и role
+                // Распознаём роли ADMIN, HH и USER
+                let role = 'USER';
+                if (decoded.role) {
+                    if (decoded.role.includes('ROLE_ADMIN')) {
+                        role = 'ADMIN';
+                    } else if (decoded.role.includes('ROLE_HH')) {
+                        role = 'HH';
+                    }
+                }
                 userData = {
                     username: decoded.sub,
-                    // Пример определения роли: если в массиве ролей есть ROLE_ADMIN — считаем пользователя администратором
-                    role: decoded.role && decoded.role.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER'
+                    role: role,
                 };
             } catch (e) {
                 console.error('Ошибка декодирования JWT:', e);
             }
 
-            // Обновляем контекст аутентификации
-            setAuth({isAuthenticated: true, user: userData});
-
-            // Перенаправляем пользователя на страницу со списком лекарств
+            setAuth({ isAuthenticated: true, user: userData });
             navigate('/medicines');
         } else {
             console.error('Токен не найден в URL.');

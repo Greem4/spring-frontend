@@ -1,4 +1,3 @@
-// Navbar.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
@@ -10,7 +9,7 @@ import {
     IconButton,
     Menu,
     MenuItem,
-    Tooltip
+    Tooltip,
 } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -19,7 +18,6 @@ import AuthDialog from './AuthDialog';
 import { API_URL } from '../config';
 
 const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
-
     const [openAuth, setOpenAuth] = useState(false);
     const [anchorElUser, setAnchorElUser] = useState(null);
 
@@ -48,12 +46,16 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                     </Typography>
 
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        {isAuthenticated && user.role === 'ADMIN' && (
+                        {isAuthenticated && (user.role === 'ADMIN' || user.role === 'HH') && (
                             <Tooltip title="Отправить email-уведомление">
                                 <Button
                                     color="inherit"
                                     startIcon={<MailOutlineIcon />}
-                                    onClick={handleSendEmail}
+                                    onClick={
+                                        user.role === 'ADMIN'
+                                            ? handleSendEmail
+                                            : () => alert('Недостаточно прав')
+                                    }
                                     sx={{ textTransform: 'none' }}
                                 >
                                     Уведомить
@@ -94,7 +96,8 @@ const Navbar = ({ isAuthenticated, user, handleLogout, setAuth }) => {
                                 >
                                     Мой профиль
                                 </MenuItem>
-                                {user.role === 'ADMIN' && (
+                                {/* Изменённое условие для отображения пункта "Администратор" */}
+                                {(user.role === 'ADMIN' || user.role === 'HH') && (
                                     <MenuItem
                                         component={Link}
                                         to="/admin"

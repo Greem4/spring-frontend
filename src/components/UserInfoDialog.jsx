@@ -1,3 +1,4 @@
+// components/UserInfoDialog.jsx
 import React from 'react';
 import {
     Dialog,
@@ -30,11 +31,13 @@ const UserInfoDialog = ({ open, user, onClose, onDelete, onToggleEnabled, onRole
                             <strong>Роль:</strong>{' '}
                             <Select
                                 value={user.role}
-                                onChange={(e) => onRoleChange(user.id, e.target.value)}
+                                onChange={onRoleChange ? (e) => onRoleChange(user.id, e.target.value) : undefined}
                                 size="small"
+                                disabled={!onRoleChange}
                             >
                                 <MenuItem value="USER">USER</MenuItem>
                                 <MenuItem value="ADMIN">ADMIN</MenuItem>
+                                <MenuItem value="HH">HH</MenuItem>
                             </Select>
                         </Typography>
                         <Typography>
@@ -43,8 +46,9 @@ const UserInfoDialog = ({ open, user, onClose, onDelete, onToggleEnabled, onRole
                                 control={
                                     <Switch
                                         checked={user.enabled}
-                                        onChange={() => onToggleEnabled(user.id)}
+                                        onChange={onToggleEnabled ? () => onToggleEnabled(user.id) : undefined}
                                         color="primary"
+                                        disabled={!onToggleEnabled}
                                     />
                                 }
                                 label={user.enabled ? 'Включён' : 'Отключён'}
@@ -54,9 +58,11 @@ const UserInfoDialog = ({ open, user, onClose, onDelete, onToggleEnabled, onRole
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={() => onDelete(user.id)} color="error">
-                    Удалить
-                </Button>
+                {onDelete && (
+                    <Button onClick={() => onDelete(user.id)} color="error">
+                        Удалить
+                    </Button>
+                )}
                 <Button onClick={onClose} color="primary">
                     Закрыть
                 </Button>

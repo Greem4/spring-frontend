@@ -1,3 +1,4 @@
+// components/AdminMenu.jsx
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../AuthContext';
 import {
@@ -26,7 +27,11 @@ const AdminMenu = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
 
-    if (!auth.isAuthenticated || auth.user.role !== 'ADMIN') {
+    // Разрешаем доступ для ADMIN и HH
+    if (
+        !auth.isAuthenticated ||
+        (auth.user.role !== 'ADMIN' && auth.user.role !== 'HH')
+    ) {
         return <Alert severity="warning">Доступ запрещён</Alert>;
     }
 
@@ -157,9 +162,10 @@ const AdminMenu = () => {
                     open={openDialog}
                     user={selectedUser}
                     onClose={handleCloseDialog}
-                    onDelete={handleDeleteUser}
-                    onToggleEnabled={handleToggleEnabled}
-                    onRoleChange={handleRoleChange}
+                    // Передаём обработчики только для ADMIN
+                    onDelete={auth.user.role === 'ADMIN' ? handleDeleteUser : undefined}
+                    onToggleEnabled={auth.user.role === 'ADMIN' ? handleToggleEnabled : undefined}
+                    onRoleChange={auth.user.role === 'ADMIN' ? handleRoleChange : undefined}
                 />
             )}
         </Box>

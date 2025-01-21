@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Container } from '@mui/material';
@@ -11,7 +12,6 @@ import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
 import { API_URL } from './config';
 
 function App() {
-
     const { auth, setAuth } = useContext(AuthContext);
 
     const handleLogout = async () => {
@@ -41,12 +41,17 @@ function App() {
                     <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
                     <Route
                         path="/medicines"
-                        element={<MedicinesTable isAdmin={auth.user?.role === 'ADMIN'} />}
+                        element={
+                            <MedicinesTable
+                                showAdminUI={auth.user?.role === 'ADMIN' || auth.user?.role === 'HH'}
+                                canEdit={auth.user?.role === 'ADMIN'}
+                            />
+                        }
                     />
                     <Route
                         path="/admin"
                         element={
-                            auth.user?.role === 'ADMIN' ? (
+                            (auth.user?.role === 'ADMIN' || auth.user?.role === 'HH') ? (
                                 <AdminMenu />
                             ) : (
                                 <Navigate to="/medicines" />
